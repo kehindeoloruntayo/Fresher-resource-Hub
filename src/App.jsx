@@ -10,6 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import AdminPanel from "./pages/AdminPanel";
 import ResourceDetail from "./pages/ResourceDetail";
+import Resources from "./pages/Resources";
+import Pending from "./pages/Pending";
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/pending" element={<Pending />} />
           </Routes>
         </main>
         <Footer />

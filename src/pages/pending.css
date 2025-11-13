@@ -1,0 +1,65 @@
+.pending-container {
+  padding: 2rem;
+  min-height: 80vh;
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+.pending-container h1 {
+  color: #1e3a8a;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.pending-container p {
+  color: #475569;
+  margin-bottom: 2rem;
+}
+
+.pending-table {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.pending-table th,
+.pending-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pending-table th {
+  background-color: #f1f5f9;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.status-badge.approved {
+  background-color: #16a34a;
+}
+
+.status-badge.pending {
+  background-color: #f59e0b;
+}
+
+@media (max-width: 768px) {
+  .pending-table th,
+  .pending-table td {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
+}
