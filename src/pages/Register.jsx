@@ -42,7 +42,7 @@ function Register() {
 
     try {
       // Hash the password
-      const saltRounds = 12;
+      const saltRounds = 21;
       const hashedPassword = await bcrypt.hash(formData.password, saltRounds);
 
       // Insert into Registered table with hashed password
