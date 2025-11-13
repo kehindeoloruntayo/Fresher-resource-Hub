@@ -27,7 +27,7 @@ function Footer() {
         <div className="footer-section contact">
           <h4>Contact</h4>
           <p>Email: support@fresherhub.edu.ng</p>
-          <p>Phone: +234 813 456 7890</p>
+          <p>Phone: +234 704 374 1067</p>
         </div>
       </div>
 

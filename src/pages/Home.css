@@ -4,7 +4,7 @@
   color: #1e293b;
 }
 
-/* HERO SECTION */
+/* Hero Section */
 .hero {
   display: flex;
   justify-content: center;
@@ -44,7 +44,7 @@
   transform: scale(1.05);
 }
 
-/* FEATURES SECTION */
+/* Features Section */
 .features {
   padding: 4rem 2rem;
   text-align: center;

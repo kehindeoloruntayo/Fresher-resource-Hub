@@ -23,7 +23,7 @@ function Login() {
         </form>
 
         <p className="auth-footer">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <Link to="/register">Register</Link>
         </p>
       </div>
