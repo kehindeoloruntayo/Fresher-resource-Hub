@@ -22,10 +22,44 @@ function Upload() {
   };
 
   const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    
+    if (file) {
+      // Validate file size (50MB limit)
+      const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+      if (file.size > maxSize) {
+        setMessage("❌ File size too large. Maximum size is 50MB.");
+        e.target.value = ""; // Clear the file input
+        setFormData(prev => ({
+          ...prev,
+          file: null
+        }));
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['.pdf', '.ppt', '.pptx', '.doc', '.docx', '.txt', '.zip'];
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      if (!allowedTypes.includes(fileExtension)) {
+        setMessage("❌ Invalid file type. Allowed: PDF, PPT, DOC, TXT, ZIP");
+        e.target.value = ""; // Clear the file input
+        setFormData(prev => ({
+          ...prev,
+          file: null
+        }));
+        return;
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
-      file: e.target.files[0]
+      file: file
     }));
+    
+    // Clear any previous error messages when a valid file is selected
+    if (file && message.includes("❌")) {
+      setMessage("");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -36,11 +70,17 @@ function Upload() {
       return;
     }
 
+    // Double-check file size before upload (client-side validation)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (formData.file.size > maxSize) {
+      setMessage("❌ File size too large. Maximum size is 50MB.");
+      return;
+    }
+
     setUploading(true);
     setMessage("");
 
     try {
-      
       const userData = sessionStorage.getItem("user");
       if (!userData) {
         navigate("/login");
@@ -53,33 +93,35 @@ function Upload() {
       console.log("User data:", user);
       console.log("Is admin:", isAdmin);
 
-      
       const fileExt = formData.file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       
       console.log("Attempting to upload:", fileName);
+      console.log("File size:", (formData.file.size / 1024 / 1024).toFixed(2), "MB");
 
-      
       const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(fileName, formData.file);
 
       if (uploadError) {
         console.error("Storage error details:", uploadError);
+        
+        // Check if it's a size limit error from Supabase
+        if (uploadError.message.includes('size') || uploadError.message.includes('large')) {
+          throw new Error("File is too large. Maximum size is 50MB.");
+        }
+        
         throw new Error(`Storage upload failed: ${uploadError.message}`);
       }
 
-      
       const { data: urlData } = supabase.storage
         .from('documents')
         .getPublicUrl(fileName);
 
       console.log("Upload successful, URL:", urlData.publicUrl);
 
-      
       const status = isAdmin ? 'approved' : 'pending';
 
-      
       const { error: dbError } = await supabase
         .from('uploads')
         .insert([
@@ -101,10 +143,8 @@ function Upload() {
         throw new Error(`Database error: ${dbError.message}`);
       }
 
-      
       if (isAdmin) {
         setMessage(`✅ File uploaded and auto-approved by ${user.FullName}!`);
-        
         
         setTimeout(() => {
           navigate("/admin");
@@ -114,16 +154,13 @@ function Upload() {
         setTimeout(() => {
           navigate("/dashboard");
         }, 2000);
-        
       }
-      
       
       setFormData({
         title: "",
         description: "",
         file: null
       });
-      
       
       document.querySelector('input[type="file"]').value = "";
 
@@ -135,7 +172,6 @@ function Upload() {
     }
   };
 
- 
   const isAdmin = sessionStorage.getItem("admin") === "true";
   const userData = sessionStorage.getItem("user");
   const user = userData ? JSON.parse(userData) : null;
@@ -147,7 +183,6 @@ function Upload() {
     <div className="upload-container">
       <h1>Upload Your Documents</h1>
       
-      {/* Show admin info if admin is uploading */}
       {isAdmin && user && (
         <div className="admin-upload-notice">
           <p>
@@ -164,9 +199,14 @@ function Upload() {
       {message && (
         <div className={`message ${message.includes("✅") ? "success" : "error"}`}>
           {message}
-          {isAdmin && message.includes("✅") && (
+          {(isAdmin && message.includes("✅")) && (
             <div className="redirect-notice">
               Redirecting to admin panel...
+            </div>
+          )}
+          {(!isAdmin && message.includes("✅")) && (
+            <div className="redirect-notice">
+              Redirecting to dashboard...
             </div>
           )}
         </div>
@@ -183,6 +223,7 @@ function Upload() {
               onChange={handleInputChange}
               placeholder="Document title" 
               required 
+              maxLength="255"
             />
           </div>
 
@@ -194,6 +235,8 @@ function Upload() {
               onChange={handleInputChange}
               placeholder="Short description of your document" 
               required 
+              maxLength="1000"
+              rows="4"
             />
           </div>
 
@@ -206,16 +249,23 @@ function Upload() {
               required 
             />
             {formData.file && (
-              <p className="file-info">Selected: {formData.file.name} ({(formData.file.size / 1024 / 1024).toFixed(2)} MB)</p>
+              <div className="file-info">
+                <p><strong>Selected:</strong> {formData.file.name}</p>
+                <p><strong>Size:</strong> {(formData.file.size / 1024 / 1024).toFixed(2)} MB / 50 MB max</p>
+                <p><strong>Type:</strong> {formData.file.type || formData.file.name.split('.').pop().toUpperCase()}</p>
+              </div>
             )}
+            <small className="file-hint">
+              Supported formats: PDF, PPT, DOC, TXT, ZIP (Max: 50MB)
+            </small>
           </div>
 
           <button 
             type="submit" 
             className="upload-btn" 
-            disabled={uploading}
+            disabled={uploading || !formData.file}
           >
-            {uploading ? "Uploading..." : `Upload Document ${isAdmin ? '👑' : ''}`}
+            {uploading ? "📤 Uploading..." : `📤 Upload Document ${isAdmin ? '👑' : ''}`}
           </button>
         </form>
       </div>
