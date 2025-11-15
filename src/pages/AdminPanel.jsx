@@ -6,45 +6,37 @@ import { supabase } from "../lib/supabase";
 function AdminPanel() {
   const [adminData, setAdminData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [documents, setDocuments] = useState([]);
+  const [uploads, setUploads] = useState([]);
+  const [refresh, setRefresh] = useState(0);
   const navigate = useNavigate();
-
-  const dummyData = [
-    { id: 1, title: "Calculus Notes", uploader: "Alice", status: "Pending" },
-    { id: 2, title: "Physics Slides", uploader: "Bob", status: "Pending" },
-    { id: 3, title: "Chemistry Lab Report", uploader: "Charlie", status: "Pending" },
-  ];
 
   useEffect(() => {
     fetchAdminData();
-    fetchDocuments();
-  }, []);
+    fetchUploads();
+  }, [refresh]);
 
   const fetchAdminData = async () => {
-    try {
-      // Get admin data from localStorage
-      const userData = localStorage.getItem("user");
-      
-      if (!userData) {
-        navigate("/login");
-        return;
-      }
+  try {
+    const userData = sessionStorage.getItem("user"); 
+    
+    if (!userData) {
+      navigate("/login");
+      return;
+    }
 
-      const user = JSON.parse(userData);
-      
-      // Fetch latest admin data from database
-      const { data, error } = await supabase
-        .from("Registered")
-        .select("FullName, Email, role")
-        .eq("Email", user.Email)
-        .single();
+    const user = JSON.parse(userData);
+    
+    const { data, error } = await supabase
+      .from("Registered")
+      .select("FullName, Email, role")
+      .eq("Email", user.Email)
+      .single();
 
       if (error) throw error;
 
       if (data && data.role === "admin") {
         setAdminData(data);
       } else {
-        // Not an admin, redirect to login
         navigate("/login");
       }
     } catch (error) {
@@ -55,57 +47,104 @@ function AdminPanel() {
     }
   };
 
-  const fetchDocuments = async () => {
-    // TODO: Replace with actual database fetch
-    // For now, using dummy data
-    setDocuments(dummyData);
-  };
-
-  const handleApprove = async (documentId) => {
+  const fetchUploads = async () => {
     try {
-      // TODO: Implement actual approve functionality
-      console.log("Approving document:", documentId);
-      
-      // Update local state for immediate UI feedback
-      setDocuments(prevDocs => 
-        prevDocs.map(doc => 
-          doc.id === documentId 
-            ? { ...doc, status: "Approved" }
-            : doc
-        )
-      );
-      
-      alert(`Document ${documentId} approved successfully!`);
+      const { data, error } = await supabase
+        .from('uploads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUploads(data || []);
     } catch (error) {
-      console.error("Error approving document:", error);
-      alert("Error approving document. Please try again.");
+      console.error("Error fetching uploads:", error);
     }
   };
 
-  const handleDelete = async (documentId) => {
-    if (window.confirm("Are you sure you want to delete this document? This action cannot be undone.")) {
+  const handleApprove = async (uploadId) => {
+    try {
+      const { error } = await supabase
+        .from('uploads')
+        .update({ 
+          status: 'approved',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', uploadId);
+
+      if (error) throw error;
+      
+      setRefresh(prev => prev + 1);
+      alert("Document approved successfully!");
+    } catch (error) {
+      console.error("Error approving document:", error);
+      alert("Error approving document: " + error.message);
+    }
+  };
+
+  const handleReject = async (uploadId) => {
+    if (window.confirm("Are you sure you want to reject this document? This action cannot be undone.")) {
       try {
-        // TODO: Implement actual delete functionality
-        console.log("Deleting document:", documentId);
+        const { error } = await supabase
+          .from('uploads')
+          .update({ 
+            status: 'rejected',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', uploadId);
+
+        if (error) throw error;
         
-        // Update local state for immediate UI feedback
-        setDocuments(prevDocs => 
-          prevDocs.filter(doc => doc.id !== documentId)
-        );
+        setRefresh(prev => prev + 1);
+        alert("Document rejected successfully!");
+      } catch (error) {
+        console.error("Error rejecting document:", error);
+        alert("Error rejecting document: " + error.message);
+      }
+    }
+  };
+
+  const handleDelete = async (uploadId, fileName) => {
+    if (window.confirm("Are you sure you want to delete this document? This will remove it from the database and storage permanently.")) {
+      try {
+       
+        const storageFileName = fileName.includes('/') ? fileName.split('/').pop() : fileName;
         
-        alert(`Document ${documentId} deleted successfully!`);
+        
+        const { error: storageError } = await supabase.storage
+          .from('documents')
+          .remove([storageFileName]);
+
+        if (storageError) {
+          console.warn("Storage delete error (file might not exist):", storageError);
+         
+        }
+
+       
+        const { error: dbError } = await supabase
+          .from('uploads')
+          .delete()
+          .eq('id', uploadId);
+
+        if (dbError) throw dbError;
+        
+        setRefresh(prev => prev + 1);
+        alert("Document deleted successfully!");
       } catch (error) {
         console.error("Error deleting document:", error);
-        alert("Error deleting document. Please try again.");
+        alert("Error deleting document: " + error.message);
       }
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("admin");
-    navigate("/login");
-  };
+  sessionStorage.removeItem("user");
+  sessionStorage.removeItem("admin");
+  navigate("/login");
+};
+
+  const pendingUploads = uploads.filter(upload => upload.status === 'pending');
+  const approvedUploads = uploads.filter(upload => upload.status === 'approved');
+  const rejectedUploads = uploads.filter(upload => upload.status === 'rejected');
 
   if (loading) {
     return (
@@ -128,7 +167,7 @@ function AdminPanel() {
       <div className="admin-header">
         <div>
           <h1>Admin Panel</h1>
-          <p>Approve or delete uploaded documents.</p>
+          <p>Review and manage uploaded documents</p>
         </div>
         <div className="admin-info">
           <p>Welcome back, <strong>{adminData.FullName}</strong>!</p>
@@ -139,53 +178,187 @@ function AdminPanel() {
       </div>
 
       <div className="admin-stats">
-        <p>You have <strong>{documents.length}</strong> documents pending approval.</p>
+        <div className="stat-cards">
+          <div className="stat-card pending">
+            <h3>{pendingUploads.length}</h3>
+            <p>Pending Review</p>
+          </div>
+          <div className="stat-card approved">
+            <h3>{approvedUploads.length}</h3>
+            <p>Approved</p>
+          </div>
+          <div className="stat-card rejected">
+            <h3>{rejectedUploads.length}</h3>
+            <p>Rejected</p>
+          </div>
+          <div className="stat-card total">
+            <h3>{uploads.length}</h3>
+            <p>Total Uploads</p>
+          </div>
+        </div>
       </div>
 
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Uploader</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {documents.map((doc) => (
-            <tr key={doc.id}>
-              <td>{doc.title}</td>
-              <td>{doc.uploader}</td>
-              <td>
-                <span className={`status-${doc.status.toLowerCase()}`}>
-                  {doc.status}
-                </span>
-              </td>
-              <td className="actions">
-                <button 
-                  className="approve-btn"
-                  onClick={() => handleApprove(doc.id)}
-                  disabled={doc.status === "Approved"}
-                >
-                  {doc.status === "Approved" ? "Approved" : "Approve"}
-                </button>
-                <button 
-                  className="delete-btn"
-                  onClick={() => handleDelete(doc.id)}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="uploads-section">
+        <h2>Documents Pending Review ({pendingUploads.length})</h2>
+        {pendingUploads.length > 0 ? (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Uploader</th>
+                <th>File</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingUploads.map((upload) => (
+                <tr key={upload.id}>
+                  <td><strong>{upload.title}</strong></td>
+                  <td>{upload.description}</td>
+                  <td>{upload.uploader_name}</td>
+                  <td>
+                    <a 
+                      href={upload.file_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="file-link"
+                    >
+                      📎 {upload.file_name}
+                    </a>
+                    <br />
+                    <small>{(upload.file_size / 1024 / 1024).toFixed(2)} MB</small>
+                  </td>
+                  <td>{new Date(upload.created_at).toLocaleDateString()}</td>
+                  <td className="actions">
+                    <button 
+                      className="approve-btn"
+                      onClick={() => handleApprove(upload.id)}
+                    >
+                      ✅ Approve
+                    </button>
+                    <button 
+                      className="reject-btn"
+                      onClick={() => handleReject(upload.id)}
+                    >
+                      ❌ Reject
+                    </button>
+                    <button 
+                      className="delete-btn"
+                      onClick={() => handleDelete(upload.id, upload.file_name)}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="no-documents">
+            <p>No documents pending review. 🎉</p>
+          </div>
+        )}
+      </div>
 
-      {documents.length === 0 && (
-        <div className="no-documents">
-          <p>No documents pending approval. 🎉</p>
-        </div>
-      )}
+     
+      <div className="uploads-section">
+        <h2>Approved Documents ({approvedUploads.length})</h2>
+        {approvedUploads.length > 0 ? (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Uploader</th>
+                <th>File</th>
+                <th>Approved Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {approvedUploads.map((upload) => (
+                <tr key={upload.id}>
+                  <td><strong>{upload.title}</strong></td>
+                  <td>{upload.uploader_name}</td>
+                  <td>
+                    <a 
+                      href={upload.file_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="file-link"
+                    >
+                      📎 {upload.file_name}
+                    </a>
+                  </td>
+                  <td>{new Date(upload.updated_at).toLocaleDateString()}</td>
+                  <td className="actions">
+                    <button 
+                      className="delete-btn"
+                      onClick={() => handleDelete(upload.id, upload.file_name)}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="no-documents">
+            <p>No approved documents yet.</p>
+          </div>
+        )}
+      </div>
+
+      
+      <div className="uploads-section">
+        <h2>Rejected Documents ({rejectedUploads.length})</h2>
+        {rejectedUploads.length > 0 ? (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Uploader</th>
+                <th>File</th>
+                <th>Rejected Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rejectedUploads.map((upload) => (
+                <tr key={upload.id}>
+                  <td><strong>{upload.title}</strong></td>
+                  <td>{upload.uploader_name}</td>
+                  <td>
+                    <a 
+                      href={upload.file_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="file-link"
+                    >
+                      📎 {upload.file_name}
+                    </a>
+                  </td>
+                  <td>{new Date(upload.updated_at).toLocaleDateString()}</td>
+                  <td className="actions">
+                    <button 
+                      className="delete-btn"
+                      onClick={() => handleDelete(upload.id, upload.file_name)}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="no-documents">
+            <p>No rejected documents.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

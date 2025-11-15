@@ -28,6 +28,7 @@ function App() {
             <Route path="/upload" element={<Upload />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/resources" element={<Resources />} />
+            <Route path="/resources" element={<Resources />} />
             <Route path="/pending" element={<Pending />} />
           </Routes>
         </main>
