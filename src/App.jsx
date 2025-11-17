@@ -12,6 +12,7 @@ import AdminPanel from "./pages/AdminPanel";
 import ResourceDetail from "./pages/ResourceDetail";
 import Resources from "./pages/Resources";
 import Pending from "./pages/Pending";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/pending" element={<Pending />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
           </Routes>
         </main>
         <Footer />
