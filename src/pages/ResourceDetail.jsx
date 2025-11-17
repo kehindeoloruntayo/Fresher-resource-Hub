@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 
 export default function ResourceDetail() {
   const { id } = useParams();
-  // NOTE: replace with fetch to backend for resource with id
+  
   const resource = {
     id,
     title: `Sample Resource #${id}`,

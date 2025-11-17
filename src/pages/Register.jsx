@@ -41,31 +41,43 @@ function Register() {
     }
 
     try {
-      // Hash the password
-      const saltRounds = 21;
+      console.log("Registering user:", formData.email);
+
+      
+      const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(formData.password, saltRounds);
 
-      // Insert into Registered table with hashed password
+      
+
+      
       const { data, error } = await supabase
         .from('Registered')
         .insert([
           {
             FullName: formData.fullName,
             Email: formData.email,
-            Password: hashedPassword, // Store the hashed password
-            role: 'user' // Default role
+            Password: hashedPassword,
+            role: 'user'
           }
         ])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Registration error:", error);
+        
+        if (error.code === '23505') {
+          throw new Error("This email is already registered");
+        }
+        throw new Error("Registration failed: " + error.message);
+      }
 
-      alert('Registration successful! You can now login.');
+      console.log("Registration successful:", data);
+      alert('✅ Registration successful! You can now login.');
       navigate('/login');
 
     } catch (error) {
       console.error('Registration error:', error);
-      setError(error.message || 'Registration failed. Please try again.');
+      setError(error.message);
     } finally {
       setLoading(false);
     }

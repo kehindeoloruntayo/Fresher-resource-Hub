@@ -26,7 +26,8 @@ function Login() {
     setError("");
 
     try {
-      // Find user in Registered table by email
+      console.log("Attempting login for:", formData.email);
+
       const { data: userData, error: userError } = await supabase
         .from("Registered")
         .select("*")
@@ -34,10 +35,13 @@ function Login() {
         .single();
 
       if (userError || !userData) {
+        console.log("No user found or error:", userError);
         throw new Error("Invalid email or password");
       }
 
-      // Verify the password against the hashed password
+      console.log("User found, verifying password...");
+
+      
       const isPasswordValid = await bcrypt.compare(
         formData.password,
         userData.Password
@@ -47,12 +51,20 @@ function Login() {
         throw new Error("Invalid email or password");
       }
 
-      // Login successful - set user session
-      localStorage.setItem("user", JSON.stringify(userData));
+      console.log("Password verified successfully");
 
-      // Redirect based on role
-      if (userData.role === "admin") {
-        localStorage.setItem("admin", "true");
+      
+      const userSession = {
+        id: userData.id,
+        FullName: userData.FullName,
+        Email: userData.Email,
+        role: userData.role
+      };
+
+      sessionStorage.setItem("user", JSON.stringify(userSession));
+      
+      if (userData.role === 'admin') {
+        sessionStorage.setItem("admin", "true");
         navigate("/admin");
       } else {
         navigate("/dashboard");
