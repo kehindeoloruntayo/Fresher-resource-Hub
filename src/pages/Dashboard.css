@@ -101,10 +101,10 @@
 }
 
 @media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .stat-card {
+    width: 100%;
+    margin: 0 auto;
   }
-
   .dashboard-card {
     width: 90%;
   }
