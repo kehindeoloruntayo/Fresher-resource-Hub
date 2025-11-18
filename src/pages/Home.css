@@ -88,3 +88,9 @@
   color: #475569;
   font-size: 0.95rem;
 }
+@media (max-width: 596px) {
+  .feature-card {
+    min-width: 300px;
+    max-width: 700px;
+  }
+}
