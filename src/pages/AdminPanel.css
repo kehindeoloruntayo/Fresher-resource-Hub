@@ -16,6 +16,109 @@
   margin-bottom: 2rem;
 }
 
+.admin-header {
+  background: #ffffff;
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+}
+
+.admin-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.2rem;
+}
+
+.admin-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.admin-info {
+  text-align: right;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-card h3 {
+  font-size: 2rem;
+  margin-bottom: 0.3rem;
+}
+
+.stat-card p {
+  margin: 0;
+  font-weight: 500;
+  color: #475569;
+}
+
+.stat-card.pending h3 {
+  color: #d97706;
+}
+
+.stat-card.approved h3 {
+  color: #16a34a;
+}
+
+.stat-card.rejected h3 {
+  color: #dc2626;
+}
+
+.stat-card.total h3 {
+  color: #1e40af;
+}
+
+.uploads-section {
+  margin-bottom: 3rem;
+}
+
+.uploads-section h2 {
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  color: #1e3a8a;
+}
+
+.admin-stats {
+  margin-bottom: 2rem;
+}
+
+.stat-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 180px;
+  background: #ffffff;
+  padding: 1.2rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease;
+}
+
+.file-link {
+  color: #1e40af;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.file-link:hover {
+  text-decoration: underline;
+}
+
+.actions button {
+  margin-right: 0.4rem;
+}
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -43,7 +146,7 @@
   color: white;
   border: none;
   padding: 0.4rem 0.8rem;
-  border-radius: 6px;
+  border-radius: 8px;
   margin-right: 0.5rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -53,18 +156,57 @@
   background-color: #15803d;
 }
 
+.reject-btn {
+  background-color: #d97706;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.reject-btn:hover {
+  background-color: #b45309;
+}
+
+.logout-btn {
+  margin-top: 8px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.25s ease;
+  font-size: 14px;
+}
+
+.logout-btn:hover {
+  background: #b91c1c;
+}
+
 .delete-btn {
   background-color: #dc2626;
   color: white;
   border: none;
   padding: 0.4rem 0.8rem;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
 .delete-btn:hover {
   background-color: #b91c1c;
+}
+
+.no-documents {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  color: #475569;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
 }
 
 @media (max-width: 768px) {
@@ -76,5 +218,27 @@
   .approve-btn,
   .delete-btn {
     padding: 0.3rem 0.6rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .admin-info {
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  .stat-cards {
+    flex-direction: column;
+  }
+
+  .admin-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 }
