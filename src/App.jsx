@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import NavbarUser from "./components/NavbarUser";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -17,10 +18,15 @@ import ResetPassword from "./pages/ResetPassword";
 import OTPVerification from "./pages/OTPVerification";
 
 function App() {
+  const isLoggedIn = !!localStorage.getItem("authToken");
+
   return (
     <Router>
+      {isLoggedIn ? <NavbarUser /> : <Navbar />}
+
       <div className="app-shell">
-        <Navbar />
+        {/* <Navbar />
+          <NavbarUser /> */}
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Home />} />
