@@ -345,21 +345,13 @@ const handleSPA = (req, res, next) => {
 // Apply SPA handler
 app.use(handleSPA);
 
-// 404 handler for API routes
-app.all('/api/:path(*)', (req, res) => {
-  res.status(404).json({ 
-    success: false,
-    error: 'API endpoint not found',
-    path: req.path 
-  });
-});
-
-// General 404 handler
+// General 404 handler (handles both API and non-API routes)
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ 
       success: false,
-      error: 'API endpoint not found' 
+      error: 'API endpoint not found',
+      path: req.path 
     });
   }
   
