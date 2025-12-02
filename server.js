@@ -187,55 +187,42 @@
 
 
 
-// server.js - FIXED VERSION for Ethereal.email
+// server.js - Mock email service for Render
 import express from 'express';
-import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Create a test email account
-let transporter;
-
-async function createTestAccount() {
-  const testAccount = await nodemailer.createTestAccount();
-  console.log('📧 Test email account created:', testAccount.user);
-  console.log('🔑 Test email password:', testAccount.pass);
-  
-  transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass
-    }
-  });
-  
-  return transporter;
-}
+// Check if dist folder exists
+const distExists = existsSync(join(__dirname, 'dist'));
+console.log('📁 dist folder exists:', distExists);
 
 // Middleware
 app.use(express.json());
 
-// Serve static files from dist folder (React build)
-app.use(express.static(join(__dirname, 'dist')));
+// Serve static files from dist folder
+if (distExists) {
+  app.use(express.static(join(__dirname, 'dist')));
+} else {
+  console.warn('⚠️ dist folder not found. Run "npm run build" first.');
+}
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     service: 'Fresher Hub',
-    email: 'Ethereal (test)',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'production'
   });
 });
 
-// Send OTP endpoint
-app.post('/api/send-otp', async (req, res) => {
-  console.log('📧 OTP request received:', req.body);
+// Mock email service - no external connections
+app.post('/api/send-otp', (req, res) => {
+  console.log('📧 Mock OTP request:', req.body);
   
   try {
     const { email, otp } = req.body;
@@ -244,80 +231,94 @@ app.post('/api/send-otp', async (req, res) => {
       return res.status(400).json({ error: 'Email and OTP required' });
     }
     
-    if (!transporter) {
-      await createTestAccount();
-    }
+    // Simulate email delay
+    const delay = Math.floor(Math.random() * 1000) + 500;
     
-    // Send email
-    const info = await transporter.sendMail({
-      from: '"Fresher Hub" <noreply@fresherhub.com>',
-      to: email,
-      subject: 'Password Reset OTP - Fresher Hub',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;">
-            <h1 style="margin: 0;">🔐 Password Reset</h1>
-          </div>
-          <div style="padding: 30px; background: white;">
-            <p>Hello,</p>
-            <p>You requested to reset your password. Use the OTP below:</p>
-            <div style="background: #f8f9fa; padding: 25px; text-align: center; margin: 25px 0; border-radius: 10px;">
-              <div style="font-size: 32px; letter-spacing: 10px; font-weight: bold; color: #333;">${otp}</div>
-              <p style="color: #666; margin-top: 10px;">This code expires in 10 minutes</p>
-            </div>
-            <p>If you didn't request this, please ignore this email.</p>
-            <p>Best regards,<br>The Fresher Hub Team</p>
-          </div>
-        </div>
-      `
-    });
-    
-    console.log('✅ Email sent successfully!');
-    console.log('📋 Preview URL:', nodemailer.getTestMessageUrl(info));
-    
-    res.json({
-      success: true,
-      message: 'OTP sent (test email)',
-      previewUrl: nodemailer.getTestMessageUrl(info),
-      otp: otp // For testing
-    });
+    setTimeout(() => {
+      console.log(`📨 Mock email sent to ${email}: ${otp}`);
+      
+      // Return mock response
+      res.json({
+        success: true,
+        message: 'OTP generated (mock email service)',
+        otp: otp,
+        previewUrl: `https://example.com/preview/${Date.now()}`,
+        note: 'On production, this would send real email. Use OTP above.',
+        instructions: [
+          '1. Copy the OTP from this response',
+          '2. Go to /verify-otp page',
+          '3. Enter the OTP to continue'
+        ]
+      });
+    }, delay);
     
   } catch (error) {
-    console.error('❌ Email error:', error);
-    
-    // Fallback: return OTP for manual use
-    res.json({ 
-      success: false, 
-      message: 'Email service failed',
-      otp: req.body.otp,
-      note: 'Use this OTP manually',
-      error: error.message
+    console.error('Server error:', error);
+    res.status(500).json({ 
+      error: 'Server error',
+      details: error.message,
+      otp: req.body?.otp || 'NOT_GENERATED'
     });
   }
 });
 
-// FIXED: SPA fallback without wildcard issues
-app.use((req, res, next) => {
-  // If it's an API route, continue
-  if (req.path.startsWith('/api/')) {
-    return next();
+// SPA fallback - serve index.html for all non-API routes
+if (distExists) {
+  try {
+    const indexHtml = readFileSync(join(__dirname, 'dist', 'index.html'), 'utf8');
+    
+    app.get('*', (req, res, next) => {
+      // Skip API routes
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      // Skip static files (they have extensions)
+      if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
+        return next();
+      }
+      // Serve index.html for SPA routing
+      res.send(indexHtml);
+    });
+    
+  } catch (err) {
+    console.error('Error reading index.html:', err.message);
   }
-  
-  // If it's a static file request, continue
-  if (req.path.includes('.')) {
-    return next();
-  }
-  
-  // Otherwise, serve index.html for SPA routing
-  res.sendFile(join(__dirname, 'dist', 'index.html'));
-});
+} else {
+  // Development fallback
+  app.get('*', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Fresher Hub - Build Required</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+          .card { max-width: 600px; margin: 0 auto; padding: 30px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+          h1 { color: #667eea; }
+          code { background: #f5f5f5; padding: 10px; border-radius: 5px; display: block; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>🚧 Build Required</h1>
+          <p>Please run the build command first:</p>
+          <code>npm run build</code>
+          <p>Or if deploying on Render, ensure build command is set to:</p>
+          <code>npm install && npm run build</code>
+          <p>Then refresh this page.</p>
+          <p><small>API endpoints are still available at /api/health and /api/send-otp</small></p>
+        </div>
+      </body>
+      </html>
+    `);
+  });
+}
 
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Frontend: http://localhost:${PORT}`);
-  console.log(`🩺 Health: http://localhost:${PORT}/api/health`);
+  console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
   console.log(`📧 OTP API: POST http://localhost:${PORT}/api/send-otp`);
-  console.log(`📁 Using Ethereal.email for test emails`);
+  console.log(`📝 Mock email service active (no external connections)`);
 });
