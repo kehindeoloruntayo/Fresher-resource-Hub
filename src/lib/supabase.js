@@ -53,29 +53,13 @@
 // });
 
 
-// src/lib/supabase.js
 import { createClient } from '@supabase/supabase-js'
 
-// Production values - hardcoded for now
-const supabaseUrl = 'https://ehqowxfzheunjjzhapaw.supabase.co';
-const supabaseAnonKey = 'sb_publishable_dgqye8n4e85Nd74gQMbhpA_qT0Cpcjs';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL // or process.env for other setups
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-console.log('🔧 Supabase Configuration:');
-console.log('URL:', supabaseUrl);
-console.log('Key:', supabaseAnonKey ? 'Present' : 'Missing');
-
-// Validate
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ CRITICAL: Supabase configuration missing!');
-  // Don't throw error - allow app to load with limited functionality
-  // throw new Error('Missing Supabase configuration');
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase configuration')
 }
 
-// Create client (will fail silently if missing)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+export const supabase = createClient(supabaseUrl, supabaseKey)
