@@ -14,6 +14,8 @@ import ResourceDetail from "./pages/ResourceDetail";
 import Resources from "./pages/Resources";
 import Pending from "./pages/Pending";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import OTPVerification from "./pages/OTPVerification";
 
 function App() {
   const isLoggedIn = !!localStorage.getItem("authToken");
