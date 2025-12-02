@@ -263,7 +263,7 @@ import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import "./Login.css";
+import "./login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
