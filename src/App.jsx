@@ -21,30 +21,32 @@ function App() {
   const isLoggedIn = !!localStorage.getItem("authToken");
 
   return (
-      <Router>
-        {isLoggedIn ? <NavbarUser /> : <Navbar />}
+    <Router>
+      {isLoggedIn ? <NavbarUser /> : <Navbar />}
 
-        <div className="app-shell">
-          {/* <Navbar />
+      <div className="app-shell">
+        {/* <Navbar />
           <NavbarUser /> */}
-          <main className="main-content">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/resource/:id" element={<ResourceDetail />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/upload" element={<Upload />} />
-              <Route path="/admin" element={<AdminPanel />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/pending" element={<Pending />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/resource/:id" element={<ResourceDetail />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/pending" element={<Pending />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
+            <Route path="/verify-otp" element={<OTPVerification />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 
