@@ -187,11 +187,12 @@
 
 
 
-// server.js - COMPLETELY FIXED - No wildcard issues
+// server.js - Using Nodemailer for Email
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, existsSync } from 'fs';
+import nodemailer from 'nodemailer';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -209,6 +210,24 @@ if (distExists) {
   console.log('✅ Serving static files from dist/');
 }
 
+// ============ EMAIL CONFIGURATION ============
+
+// Create email transporter
+let transporter = null;
+
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+  console.log('✅ Email configured with:', process.env.EMAIL_USER);
+} else {
+  console.log('⚠️ Email not configured (missing EMAIL_USER or EMAIL_PASS)');
+}
+
 // ============ API ROUTES ============
 
 // Health check endpoint
@@ -217,7 +236,7 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     service: 'Fresher Hub',
     timestamp: new Date().toISOString(),
-    sendgrid: !!process.env.SENDGRID_API_KEY
+    email: !!transporter
   });
 });
 
@@ -235,50 +254,64 @@ app.post('/api/send-otp', async (req, res) => {
       });
     }
     
-    // Check for SendGrid API key
-    const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-    
-    if (SENDGRID_API_KEY) {
-      console.log('📤 Attempting SendGrid email to:', email);
+    // Try sending email if transporter is configured
+    if (transporter) {
+      console.log('📤 Attempting to send email to:', email);
       
       try {
-        // Send email via SendGrid
-        const sgResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            personalizations: [{ to: [{ email }] }],
-            from: { 
-              email: 'noreply@fresherhub.com', 
-              name: 'Fresher Hub' 
-            },
-            subject: 'Password Reset OTP - Fresher Hub',
-            content: [
-              {
-                type: 'text/plain',
-                value: `Your OTP is: ${otp}. It expires in 10 minutes.`
-              }
-            ]
-          })
+        const mailOptions = {
+          from: `"Fresher Hub" <${process.env.EMAIL_USER}>`,
+          to: email,
+          subject: 'Password Reset OTP - Fresher Hub',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                .otp-box { background: white; border: 2px dashed #667eea; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
+                .otp-code { font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 5px; }
+                .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>🔐 Password Reset</h1>
+                </div>
+                <div class="content">
+                  <p>Hello,</p>
+                  <p>You requested to reset your password. Use the OTP code below to continue:</p>
+                  <div class="otp-box">
+                    <div class="otp-code">${otp}</div>
+                  </div>
+                  <p><strong>⏱️ This code expires in 10 minutes.</strong></p>
+                  <p>If you didn't request this, please ignore this email.</p>
+                  <div class="footer">
+                    <p>This is an automated email from Fresher Hub</p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+          text: `Your OTP is: ${otp}. It expires in 10 minutes.`
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log('✅ Email sent successfully');
+        
+        return res.json({
+          success: true,
+          message: 'OTP sent to your email',
+          service: 'Nodemailer'
         });
         
-        if (sgResponse.ok) {
-          console.log('✅ Email sent via SendGrid');
-          return res.json({
-            success: true,
-            message: 'OTP sent to your email',
-            service: 'SendGrid'
-          });
-        } else {
-          const errorText = await sgResponse.text();
-          console.error('SendGrid error:', sgResponse.status, errorText);
-          // Continue to fallback
-        }
-      } catch (sgError) {
-        console.error('SendGrid failed:', sgError.message);
+      } catch (emailError) {
+        console.error('❌ Email failed:', emailError.message);
         // Continue to fallback
       }
     }
@@ -291,7 +324,7 @@ app.post('/api/send-otp', async (req, res) => {
       message: 'OTP generated',
       otp: otp,
       service: 'Mock',
-      note: 'Check this response for your OTP code',
+      note: 'Email not configured - check this response for your OTP',
       instructions: `Use this OTP on verification page: ${otp}`
     });
     
@@ -385,6 +418,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📧 SendGrid configured: ${process.env.SENDGRID_API_KEY ? '✅ Yes' : '❌ No (using mock)'}`);
+  console.log(`📧 Email configured: ${transporter ? '✅ Yes' : '❌ No (using mock)'}`);
   console.log(`📁 SPA routing: ${indexHtml ? '✅ Enabled' : '❌ Disabled'}`);
 });
