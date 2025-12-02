@@ -108,77 +108,168 @@
 // });
 
 
-// server.js - Fixed version
+// // server.js - Fixed version
+// import express from 'express';
+// import { fileURLToPath } from 'url';
+// import { dirname, join } from 'path';
+// import dotenv from 'dotenv';
+
+// dotenv.config();
+
+// const __dirname = dirname(fileURLToPath(import.meta.url));
+// const app = express();
+
+// // Middleware
+// app.use(express.json());
+
+// // Serve static files from dist folder (React build)
+// app.use(express.static(join(__dirname, 'dist')));
+
+// // Health check endpoint
+// app.get('/api/health', (req, res) => {
+//   res.json({ 
+//     status: 'OK', 
+//     service: 'Fresher Hub',
+//     timestamp: new Date().toISOString(),
+//     environment: process.env.NODE_ENV || 'development'
+//   });
+// });
+
+// // OTP endpoint (demo mode - no email sending)
+// app.post('/api/send-otp', (req, res) => {
+//   try {
+//     const { email, otp } = req.body;
+    
+//     if (!email || !otp) {
+//       return res.status(400).json({ error: 'Email and OTP required' });
+//     }
+    
+//     console.log(`📧 Demo OTP for ${email}: ${otp}`);
+    
+//     // Demo mode - return success without actual email
+//     res.json({ 
+//       success: true, 
+//       message: 'OTP generated (demo mode)',
+//       otp: otp,
+//       note: 'In production, this would be sent via email'
+//     });
+    
+//   } catch (error) {
+//     console.error('OTP error:', error);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// });
+
+// // Fix for wildcard route - use regex instead of '*'
+// app.get(/\/(?!api).*/, (req, res) => {
+//   res.sendFile(join(__dirname, 'dist', 'index.html'));
+// });
+
+// // Alternative fix: Use a catch-all that excludes API routes
+// // app.use((req, res, next) => {
+// //   if (req.path.startsWith('/api/')) {
+// //     return next();
+// //   }
+// //   res.sendFile(join(__dirname, 'dist', 'index.html'));
+// // });
+
+// // Start server
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, '0.0.0.0', () => {
+//   console.log(`🚀 Server running on port ${PORT}`);
+//   console.log(`🌐 Frontend: http://localhost:${PORT}`);
+//   console.log(`🩺 Health: http://localhost:${PORT}/api/health`);
+//   console.log(`📧 OTP API: POST http://localhost:${PORT}/api/send-otp`);
+//   console.log(`📁 Serving from: ${join(__dirname, 'dist')}`);
+// });
+
+
+
+
+
 import express from 'express';
+import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Middleware
-app.use(express.json());
+// Create a test email account
+let transporter;
 
-// Serve static files from dist folder (React build)
+async function createTestAccount() {
+  const testAccount = await nodemailer.createTestAccount();
+  console.log('📧 Test email account created:', testAccount.user);
+  
+  transporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass
+    }
+  });
+  
+  return transporter;
+}
+
+app.use(express.json());
 app.use(express.static(join(__dirname, 'dist')));
 
-// Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    service: 'Fresher Hub',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
+  res.json({ status: 'OK', email: 'Ethereal (test)' });
 });
 
-// OTP endpoint (demo mode - no email sending)
-app.post('/api/send-otp', (req, res) => {
+app.post('/api/send-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
     
-    if (!email || !otp) {
-      return res.status(400).json({ error: 'Email and OTP required' });
+    if (!transporter) {
+      await createTestAccount();
     }
     
-    console.log(`📧 Demo OTP for ${email}: ${otp}`);
+    const info = await transporter.sendMail({
+      from: '"Fresher Hub" <noreply@fresherhub.com>',
+      to: email,
+      subject: 'Password Reset OTP',
+      html: `
+        <h2>Password Reset OTP</h2>
+        <p>Your OTP code is: <strong>${otp}</strong></p>
+        <p>This code expires in 10 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      `
+    });
     
-    // Demo mode - return success without actual email
-    res.json({ 
-      success: true, 
-      message: 'OTP generated (demo mode)',
-      otp: otp,
-      note: 'In production, this would be sent via email'
+    console.log('✅ Email sent!');
+    console.log('📋 Preview URL:', nodemailer.getTestMessageUrl(info));
+    
+    res.json({
+      success: true,
+      message: 'OTP sent (test email)',
+      previewUrl: nodemailer.getTestMessageUrl(info),
+      otp: otp // For testing
     });
     
   } catch (error) {
-    console.error('OTP error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Email error:', error);
+    // Fallback
+    res.json({ 
+      success: false, 
+      message: 'Email failed',
+      otp: otp,
+      note: 'Use this OTP manually'
+    });
   }
 });
 
-// Fix for wildcard route - use regex instead of '*'
-app.get(/\/(?!api).*/, (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(join(__dirname, 'dist', 'index.html'));
 });
 
-// Alternative fix: Use a catch-all that excludes API routes
-// app.use((req, res, next) => {
-//   if (req.path.startsWith('/api/')) {
-//     return next();
-//   }
-//   res.sendFile(join(__dirname, 'dist', 'index.html'));
-// });
-
-// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Frontend: http://localhost:${PORT}`);
-  console.log(`🩺 Health: http://localhost:${PORT}/api/health`);
-  console.log(`📧 OTP API: POST http://localhost:${PORT}/api/send-otp`);
-  console.log(`📁 Serving from: ${join(__dirname, 'dist')}`);
+  console.log(`📧 Using Ethereal.email for test emails`);
 });
