@@ -130,128 +130,255 @@
 
 
 
-// src/pages/Login.jsx
-import "./login.css";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+// // src/pages/Login.jsx
+// import "./login.css";
+// import { Link, useNavigate } from "react-router-dom";
+// import { useState } from "react";
+// import { supabase } from "../lib/supabase";
+
+// function Login() {
+//   const [formData, setFormData] = useState({
+//     email: "",
+//     password: "",
+//   });
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState("");
+//   const navigate = useNavigate();
+
+//   const handleChange = (e) => {
+//     setFormData({
+//       ...formData,
+//       [e.target.name]: e.target.value,
+//     });
+//   };
+
+//   const handleLogin = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+//     setError("");
+
+//     try {
+//       console.log("Attempting login for:", formData.email);
+
+//       // Use Supabase Auth for login (handles password verification)
+//       const { data, error } = await supabase.auth.signInWithPassword({
+//         email: formData.email,
+//         password: formData.password,
+//       });
+
+//       if (error) {
+//         console.log("Login error:", error);
+//         throw new Error(error.message || "Invalid email or password");
+//       }
+
+//       console.log("Login successful:", data.user);
+
+//       // Get additional user info from your Registered table
+//       const { data: userData, error: userError } = await supabase
+//         .from("Registered")
+//         .select("*")
+//         .eq("Email", formData.email)
+//         .single();
+
+//       // Create user session
+//       const userSession = {
+//         id: data.user.id,
+//         FullName: userData?.FullName || data.user.user_metadata?.full_name,
+//         Email: data.user.email,
+//         role: userData?.role || data.user.user_metadata?.role || 'user'
+//       };
+
+//       sessionStorage.setItem("user", JSON.stringify(userSession));
+      
+//       // Navigate based on role
+//       if (userSession.role === 'admin') {
+//         sessionStorage.setItem("admin", "true");
+//         navigate("/admin");
+//       } else {
+//         navigate("/dashboard");
+//       }
+//     } catch (error) {
+//       console.error("Login error:", error);
+//       setError(error.message);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="auth-container">
+//       <div className="auth-box">
+//         <h2>Welcome Back 👋</h2>
+//         <p className="auth-subtext">Login to your Fresher Hub account</p>
+
+//         {error && <div className="error-message">{error}</div>}
+
+//         <form className="auth-form" onSubmit={handleLogin}>
+//           <div className="form-group">
+//             <label>Email</label>
+//             <input
+//               type="email"
+//               name="email"
+//               value={formData.email}
+//               onChange={handleChange}
+//               placeholder="Enter your email"
+//               required
+//               disabled={loading}
+//             />
+//           </div>
+
+//           <div className="form-group">
+//             <label>Password</label>
+//             <input
+//               type="password"
+//               name="password"
+//               value={formData.password}
+//               onChange={handleChange}
+//               placeholder="Enter your password"
+//               required
+//               disabled={loading}
+//             />
+//           </div>
+
+//           <button type="submit" className="auth-btn" disabled={loading}>
+//             {loading ? "Logging in..." : "Login"}
+//           </button>
+//         </form>
+
+//         <p className="auth-footer">
+//           Don't have an account? <Link to="/register">Register</Link>
+//         </p>
+//         <p className="forgot-password">
+//           <Link to="/forgot-password">Forgot Password?</Link>
+//         </p>
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default Login;
+
+
+import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import "./Login.css";
 
 function Login() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     try {
-      console.log("Attempting login for:", formData.email);
+      console.log("Attempting login for:", email);
 
-      // Use Supabase Auth for login (handles password verification)
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (error) {
-        console.log("Login error:", error);
-        throw new Error(error.message || "Invalid email or password");
-      }
-
-      console.log("Login successful:", data.user);
-
-      // Get additional user info from your Registered table
-      const { data: userData, error: userError } = await supabase
+      // Query custom Registered table
+      const { data: user, error } = await supabase
         .from("Registered")
         .select("*")
-        .eq("Email", formData.email)
+        .eq("Email", email)
+        .eq("Password", password)
         .single();
 
-      // Create user session
-      const userSession = {
-        id: data.user.id,
-        FullName: userData?.FullName || data.user.user_metadata?.full_name,
-        Email: data.user.email,
-        role: userData?.role || data.user.user_metadata?.role || 'user'
-      };
-
-      sessionStorage.setItem("user", JSON.stringify(userSession));
-      
-      // Navigate based on role
-      if (userSession.role === 'admin') {
-        sessionStorage.setItem("admin", "true");
-        navigate("/admin");
-      } else {
-        navigate("/dashboard");
+      if (error || !user) {
+        console.error("Login failed:", error);
+        toast.error("Invalid email or password");
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      setError(error.message);
+
+      // Login successful
+      console.log("Login successful:", user);
+      
+      // Store user session in localStorage
+      localStorage.setItem("user", JSON.stringify({
+        id: user.id,
+        email: user.Email,
+        username: user.Username,
+        loggedIn: true
+      }));
+
+      toast.success("Login successful!");
+      
+      // Navigate to dashboard
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+
+    } catch (err) {
+      console.error("Login error:", err);
+      toast.error("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-box">
-        <h2>Welcome Back 👋</h2>
-        <p className="auth-subtext">Login to your Fresher Hub account</p>
+    <div className="login-container">
+      <form className="login-box" onSubmit={handleLogin}>
+        <h1>Welcome Back</h1>
+        <p className="auth-subtext">Sign in to your account</p>
 
-        {error && <div className="error-message">{error}</div>}
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="login-input"
+            required
+            disabled={loading}
+          />
+        </div>
 
-        <form className="auth-form" onSubmit={handleLogin}>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-              disabled={loading}
-            />
-          </div>
+        <div className="form-group">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="login-input"
+            required
+            disabled={loading}
+          />
+        </div>
 
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              required
-              disabled={loading}
-            />
-          </div>
+        <div className="forgot-link-container">
+          <Link to="/forgot-password" className="forgot-link">
+            Forgot password?
+          </Link>
+        </div>
 
-          <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
+        <button 
+          type="submit" 
+          className="login-btn" 
+          disabled={loading || !email || !password}
+        >
+          {loading ? (
+            <>
+              <span className="spinner"></span>
+              Signing in...
+            </>
+          ) : (
+            "Sign In"
+          )}
+        </button>
 
-        <p className="auth-footer">
-          Don't have an account? <Link to="/register">Register</Link>
+        <p className="signup-link">
+          Don't have an account?{" "}
+          <Link to="/register">Sign up</Link>
         </p>
-        <p className="forgot-password">
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </p>
-      </div>
+      </form>
     </div>
   );
 }
