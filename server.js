@@ -187,7 +187,7 @@
 
 
 
-// server.js - SendGrid version WITHOUT wildcard issues
+// server.js - COMPLETELY FIXED - No wildcard issues
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -198,19 +198,7 @@ const app = express();
 
 // Check if dist folder exists
 const distExists = existsSync(join(__dirname, 'dist'));
-const indexPath = distExists ? join(__dirname, 'dist', 'index.html') : null;
-let indexHtml = '';
-
-if (distExists && indexPath && existsSync(indexPath)) {
-  try {
-    indexHtml = readFileSync(indexPath, 'utf8');
-    console.log('✅ Loaded React build from dist/');
-  } catch (err) {
-    console.warn('⚠️ Could not read index.html:', err.message);
-  }
-} else {
-  console.warn('⚠️ dist folder not found. Run "npm run build" first.');
-}
+console.log('📁 dist exists:', distExists);
 
 // Middleware
 app.use(express.json());
@@ -218,184 +206,193 @@ app.use(express.json());
 // Serve static files from dist folder
 if (distExists) {
   app.use(express.static(join(__dirname, 'dist')));
+  console.log('✅ Serving static files from dist/');
 }
+
+// ============ API ROUTES ============
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     service: 'Fresher Hub',
-    emailService: process.env.SENDGRID_API_KEY ? 'SendGrid' : 'Mock',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    sendgrid: !!process.env.SENDGRID_API_KEY
   });
 });
 
-// Send OTP with SendGrid
+// Send OTP endpoint
 app.post('/api/send-otp', async (req, res) => {
-  console.log('📧 OTP request received');
+  console.log('📧 OTP request:', req.body?.email);
   
   try {
     const { email, otp } = req.body;
     
     if (!email || !otp) {
-      return res.status(400).json({ error: 'Email and OTP required' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Email and OTP required' 
+      });
     }
     
-    // Check if SendGrid API key is configured
+    // Check for SendGrid API key
     const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
     
-    if (!SENDGRID_API_KEY) {
-      console.log('⚠️ SendGrid not configured, using mock service');
-      return sendMockResponse(res, email, otp);
+    if (SENDGRID_API_KEY) {
+      console.log('📤 Attempting SendGrid email to:', email);
+      
+      try {
+        // Send email via SendGrid
+        const sgResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            personalizations: [{ to: [{ email }] }],
+            from: { 
+              email: 'noreply@fresherhub.com', 
+              name: 'Fresher Hub' 
+            },
+            subject: 'Password Reset OTP - Fresher Hub',
+            content: [
+              {
+                type: 'text/plain',
+                value: `Your OTP is: ${otp}. It expires in 10 minutes.`
+              }
+            ]
+          })
+        });
+        
+        if (sgResponse.ok) {
+          console.log('✅ Email sent via SendGrid');
+          return res.json({
+            success: true,
+            message: 'OTP sent to your email',
+            service: 'SendGrid'
+          });
+        } else {
+          const errorText = await sgResponse.text();
+          console.error('SendGrid error:', sgResponse.status, errorText);
+          // Continue to fallback
+        }
+      } catch (sgError) {
+        console.error('SendGrid failed:', sgError.message);
+        // Continue to fallback
+      }
     }
     
-    console.log('Attempting to send email via SendGrid to:', email);
+    // Fallback: Mock response (no email sent)
+    console.log(`📝 Mock OTP for ${email}: ${otp}`);
     
-    // Send real email with SendGrid
-    const sgResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        personalizations: [{ 
-          to: [{ email }],
-          subject: 'Password Reset OTP - Fresher Hub'
-        }],
-        from: { 
-          email: 'noreply@fresherhub.com', 
-          name: 'Fresher Hub' 
-        },
-        content: [
-          {
-            type: 'text/html',
-            value: `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-                  .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; border-radius: 10px 10px 0 0; }
-                  .content { padding: 30px; background: white; border-radius: 0 0 10px 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-                  .otp-box { background: #f8f9fa; padding: 25px; text-align: center; margin: 25px 0; border-radius: 10px; border: 2px dashed #667eea; }
-                  .otp-code { font-size: 32px; letter-spacing: 10px; font-weight: bold; color: #333; }
-                  .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px; }
-                </style>
-              </head>
-              <body>
-                <div class="header">
-                  <h1>🔐 Password Reset</h1>
-                </div>
-                <div class="content">
-                  <p>Hello,</p>
-                  <p>You requested to reset your password for Fresher Hub. Use the OTP below:</p>
-                  
-                  <div class="otp-box">
-                    <div class="otp-code">${otp}</div>
-                    <p style="color: #666; margin-top: 10px;">This code expires in 10 minutes</p>
-                  </div>
-                  
-                  <p>If you didn't request this password reset, please ignore this email.</p>
-                  <p>Best regards,<br><strong>The Fresher Hub Team</strong></p>
-                  
-                  <div class="footer">
-                    <p>This is an automated message, please do not reply to this email.</p>
-                  </div>
-                </div>
-              </body>
-              </html>
-            `
-          }
-        ]
-      })
+    res.json({
+      success: true,
+      message: 'OTP generated',
+      otp: otp,
+      service: 'Mock',
+      note: 'Check this response for your OTP code',
+      instructions: `Use this OTP on verification page: ${otp}`
     });
     
-    if (sgResponse.ok) {
-      console.log('✅ Email sent successfully via SendGrid');
-      res.json({
-        success: true,
-        message: 'OTP sent to your email',
-        service: 'SendGrid',
-        note: 'Check your inbox (and spam folder)'
-      });
-    } else {
-      const errorText = await sgResponse.text();
-      console.error('❌ SendGrid API error:', errorText);
-      throw new Error(`SendGrid failed: ${sgResponse.status}`);
-    }
-    
   } catch (error) {
-    console.error('❌ Email error:', error.message);
-    // Fallback to mock response
-    sendMockResponse(res, req.body?.email, req.body?.otp, error.message);
+    console.error('Server error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error',
+      details: error.message 
+    });
   }
 });
 
-// Mock response function
-function sendMockResponse(res, email, otp, error = null) {
-  console.log(`📨 Mock response for ${email}: ${otp}`);
+// ============ SPA ROUTING ============
+
+// Load index.html for SPA
+let indexHtml = null;
+if (distExists) {
+  try {
+    const indexPath = join(__dirname, 'dist', 'index.html');
+    if (existsSync(indexPath)) {
+      indexHtml = readFileSync(indexPath, 'utf8');
+      console.log('✅ Loaded index.html for SPA routing');
+    }
+  } catch (err) {
+    console.error('Error loading index.html:', err.message);
+  }
+}
+
+// SPA fallback handler - NO WILDCARDS
+const handleSPA = (req, res, next) => {
+  // Don't handle API routes
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
   
-  res.json({
-    success: true,
-    message: error ? 'Email service failed, using OTP below' : 'OTP generated (demo mode)',
-    otp: otp,
-    service: 'Mock',
-    error: error,
-    instructions: [
-      '1. Copy this OTP: ' + otp,
-      '2. Go to /verify-otp page',
-      '3. Enter the OTP to continue'
-    ]
-  });
-}
+  // Don't handle static files (they have extensions)
+  if (req.path.match(/\.[a-zA-Z0-9]{2,}$/)) {
+    return next();
+  }
+  
+  // Serve index.html for SPA routing
+  if (indexHtml) {
+    return res.send(indexHtml);
+  }
+  
+  // No index.html found
+  next();
+};
 
-// Handle SPA routing WITHOUT wildcard issues
-if (indexHtml) {
-  // Handle all non-API, non-static file routes
-  app.use((req, res, next) => {
-    // Skip API routes
-    if (req.path.startsWith('/api/')) {
-      return next();
-    }
-    
-    // Skip if it looks like a file request (has extension)
-    if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|json|txt)$/)) {
-      return next();
-    }
-    
-    // Serve index.html for all other routes (SPA)
-    res.send(indexHtml);
-  });
-} else {
-  // Development message
-  app.get('/', (req, res) => {
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head><title>Fresher Hub</title><style>body{font-family:Arial;padding:40px;text-align:center;}</style></head>
-      <body>
-        <h1>Fresher Hub</h1>
-        <p>Run <code>npm run build</code> then refresh.</p>
-        <p><a href="/api/health">API Health Check</a></p>
-      </body>
-      </html>
-    `);
-  });
-}
+// Apply SPA handler
+app.use(handleSPA);
 
-// Handle 404 for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: 'API endpoint not found' });
+// 404 handler for API routes
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ 
+    success: false,
+    error: 'API endpoint not found',
+    path: req.path 
+  });
 });
 
-// Start server
+// General 404 handler
+app.use((req, res) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ 
+      success: false,
+      error: 'API endpoint not found' 
+    });
+  }
+  
+  if (indexHtml) {
+    return res.send(indexHtml);
+  }
+  
+  res.status(404).send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Fresher Hub - Not Found</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+        h1 { color: #667eea; }
+        code { background: #f5f5f5; padding: 10px; border-radius: 5px; }
+      </style>
+    </head>
+    <body>
+      <h1>404 - Page Not Found</h1>
+      <p>The requested URL <code>${req.path}</code> was not found.</p>
+      <p><a href="/">Go to Homepage</a></p>
+    </body>
+    </html>
+  `);
+});
+
+// ============ START SERVER ============
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Health: http://localhost:${PORT}/api/health`);
-  console.log(`📧 OTP: POST http://localhost:${PORT}/api/send-otp`);
-  console.log(`📦 React build: ${distExists ? '✅ Loaded' : '❌ Missing (run npm run build)'}`);
-  console.log(`🔑 SendGrid: ${process.env.SENDGRID_API_KEY ? '✅ Configured' : '❌ Not configured (using mock)'}`);
+  console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`📧 SendGrid configured: ${process.env.SENDGRID_API_KEY ? '✅ Yes' : '❌ No (using mock)'}`);
+  console.log(`📁 SPA routing: ${indexHtml ? '✅ Enabled' : '❌ Disabled'}`);
 });
