@@ -187,6 +187,7 @@
 
 
 
+// server.js - FIXED VERSION for Ethereal.email
 import express from 'express';
 import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
@@ -201,6 +202,7 @@ let transporter;
 async function createTestAccount() {
   const testAccount = await nodemailer.createTestAccount();
   console.log('📧 Test email account created:', testAccount.user);
+  console.log('🔑 Test email password:', testAccount.pass);
   
   transporter = nodemailer.createTransport({
     host: 'smtp.ethereal.email',
@@ -215,34 +217,62 @@ async function createTestAccount() {
   return transporter;
 }
 
+// Middleware
 app.use(express.json());
+
+// Serve static files from dist folder (React build)
 app.use(express.static(join(__dirname, 'dist')));
 
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', email: 'Ethereal (test)' });
+  res.json({ 
+    status: 'OK', 
+    service: 'Fresher Hub',
+    email: 'Ethereal (test)',
+    timestamp: new Date().toISOString()
+  });
 });
 
+// Send OTP endpoint
 app.post('/api/send-otp', async (req, res) => {
+  console.log('📧 OTP request received:', req.body);
+  
   try {
     const { email, otp } = req.body;
+    
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and OTP required' });
+    }
     
     if (!transporter) {
       await createTestAccount();
     }
     
+    // Send email
     const info = await transporter.sendMail({
       from: '"Fresher Hub" <noreply@fresherhub.com>',
       to: email,
-      subject: 'Password Reset OTP',
+      subject: 'Password Reset OTP - Fresher Hub',
       html: `
-        <h2>Password Reset OTP</h2>
-        <p>Your OTP code is: <strong>${otp}</strong></p>
-        <p>This code expires in 10 minutes.</p>
-        <p>If you didn't request this, please ignore this email.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;">
+            <h1 style="margin: 0;">🔐 Password Reset</h1>
+          </div>
+          <div style="padding: 30px; background: white;">
+            <p>Hello,</p>
+            <p>You requested to reset your password. Use the OTP below:</p>
+            <div style="background: #f8f9fa; padding: 25px; text-align: center; margin: 25px 0; border-radius: 10px;">
+              <div style="font-size: 32px; letter-spacing: 10px; font-weight: bold; color: #333;">${otp}</div>
+              <p style="color: #666; margin-top: 10px;">This code expires in 10 minutes</p>
+            </div>
+            <p>If you didn't request this, please ignore this email.</p>
+            <p>Best regards,<br>The Fresher Hub Team</p>
+          </div>
+        </div>
       `
     });
     
-    console.log('✅ Email sent!');
+    console.log('✅ Email sent successfully!');
     console.log('📋 Preview URL:', nodemailer.getTestMessageUrl(info));
     
     res.json({
@@ -253,23 +283,41 @@ app.post('/api/send-otp', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Email error:', error);
-    // Fallback
+    console.error('❌ Email error:', error);
+    
+    // Fallback: return OTP for manual use
     res.json({ 
       success: false, 
-      message: 'Email failed',
-      otp: otp,
-      note: 'Use this OTP manually'
+      message: 'Email service failed',
+      otp: req.body.otp,
+      note: 'Use this OTP manually',
+      error: error.message
     });
   }
 });
 
-app.get('*', (req, res) => {
+// FIXED: SPA fallback without wildcard issues
+app.use((req, res, next) => {
+  // If it's an API route, continue
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  
+  // If it's a static file request, continue
+  if (req.path.includes('.')) {
+    return next();
+  }
+  
+  // Otherwise, serve index.html for SPA routing
   res.sendFile(join(__dirname, 'dist', 'index.html'));
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📧 Using Ethereal.email for test emails`);
+  console.log(`🌐 Frontend: http://localhost:${PORT}`);
+  console.log(`🩺 Health: http://localhost:${PORT}/api/health`);
+  console.log(`📧 OTP API: POST http://localhost:${PORT}/api/send-otp`);
+  console.log(`📁 Using Ethereal.email for test emails`);
 });
