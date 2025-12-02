@@ -187,7 +187,7 @@
 
 
 
-// server.js - Mock email service for Render
+// server.js - With SendGrid
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -196,33 +196,26 @@ import { readFileSync, existsSync } from 'fs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Check if dist folder exists
-const distExists = existsSync(join(__dirname, 'dist'));
-console.log('📁 dist folder exists:', distExists);
-
 // Middleware
 app.use(express.json());
 
-// Serve static files from dist folder
-if (distExists) {
+// Serve static files
+if (existsSync(join(__dirname, 'dist'))) {
   app.use(express.static(join(__dirname, 'dist')));
-} else {
-  console.warn('⚠️ dist folder not found. Run "npm run build" first.');
 }
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
-    status: 'OK', 
-    service: 'Fresher Hub',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'production'
+    status: 'OK',
+    emailService: 'SendGrid',
+    timestamp: new Date().toISOString()
   });
 });
 
-// Mock email service - no external connections
-app.post('/api/send-otp', (req, res) => {
-  console.log('📧 Mock OTP request:', req.body);
+// Send OTP with SendGrid
+app.post('/api/send-otp', async (req, res) => {
+  console.log('📧 OTP request:', req.body);
   
   try {
     const { email, otp } = req.body;
@@ -231,94 +224,91 @@ app.post('/api/send-otp', (req, res) => {
       return res.status(400).json({ error: 'Email and OTP required' });
     }
     
-    // Simulate email delay
-    const delay = Math.floor(Math.random() * 1000) + 500;
+    // Check if SendGrid API key is configured
+    const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
     
-    setTimeout(() => {
-      console.log(`📨 Mock email sent to ${email}: ${otp}`);
-      
-      // Return mock response
+    if (!SENDGRID_API_KEY) {
+      console.log('⚠️ SendGrid not configured, using mock service');
+      return sendMockEmail(res, email, otp);
+    }
+    
+    // Send real email with SendGrid
+    const sgResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email }] }],
+        from: { 
+          email: 'noreply@fresherhub.com', 
+          name: 'Fresher Hub' 
+        },
+        subject: 'Password Reset OTP - Fresher Hub',
+        content: [
+          {
+            type: 'text/html',
+            value: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Password Reset OTP</h2>
+                <p>Your OTP code is: <strong>${otp}</strong></p>
+                <p>This code expires in 10 minutes.</p>
+                <p>If you didn't request this, please ignore this email.</p>
+              </div>
+            `
+          }
+        ]
+      })
+    });
+    
+    if (sgResponse.ok) {
+      console.log('✅ Email sent via SendGrid');
       res.json({
         success: true,
-        message: 'OTP generated (mock email service)',
+        message: 'OTP sent to your email',
         otp: otp,
-        previewUrl: `https://example.com/preview/${Date.now()}`,
-        note: 'On production, this would send real email. Use OTP above.',
-        instructions: [
-          '1. Copy the OTP from this response',
-          '2. Go to /verify-otp page',
-          '3. Enter the OTP to continue'
-        ]
+        service: 'SendGrid'
       });
-    }, delay);
+    } else {
+      const error = await sgResponse.text();
+      console.error('SendGrid error:', error);
+      throw new Error('Failed to send email via SendGrid');
+    }
     
   } catch (error) {
-    console.error('Server error:', error);
-    res.status(500).json({ 
-      error: 'Server error',
-      details: error.message,
-      otp: req.body?.otp || 'NOT_GENERATED'
-    });
+    console.error('Email error:', error);
+    // Fallback to mock
+    sendMockEmail(res, req.body?.email, req.body?.otp);
   }
 });
 
-// SPA fallback - serve index.html for all non-API routes
-if (distExists) {
-  try {
-    const indexHtml = readFileSync(join(__dirname, 'dist', 'index.html'), 'utf8');
-    
-    app.get('*', (req, res, next) => {
-      // Skip API routes
-      if (req.path.startsWith('/api/')) {
-        return next();
-      }
-      // Skip static files (they have extensions)
-      if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-        return next();
-      }
-      // Serve index.html for SPA routing
-      res.send(indexHtml);
-    });
-    
-  } catch (err) {
-    console.error('Error reading index.html:', err.message);
-  }
-} else {
-  // Development fallback
-  app.get('*', (req, res) => {
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Fresher Hub - Build Required</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
-          .card { max-width: 600px; margin: 0 auto; padding: 30px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-          h1 { color: #667eea; }
-          code { background: #f5f5f5; padding: 10px; border-radius: 5px; display: block; margin: 20px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h1>🚧 Build Required</h1>
-          <p>Please run the build command first:</p>
-          <code>npm run build</code>
-          <p>Or if deploying on Render, ensure build command is set to:</p>
-          <code>npm install && npm run build</code>
-          <p>Then refresh this page.</p>
-          <p><small>API endpoints are still available at /api/health and /api/send-otp</small></p>
-        </div>
-      </body>
-      </html>
-    `);
+// Mock email fallback
+function sendMockEmail(res, email, otp) {
+  console.log(`📨 Mock email to ${email}: ${otp}`);
+  
+  res.json({
+    success: true,
+    message: 'OTP generated (mock service)',
+    otp: otp,
+    note: 'In production with SendGrid, this would be a real email',
+    instructions: 'Copy OTP above and use it on verification page'
   });
 }
 
-// Start server
+// SPA fallback
+if (existsSync(join(__dirname, 'dist', 'index.html'))) {
+  const indexHtml = readFileSync(join(__dirname, 'dist', 'index.html'), 'utf8');
+  
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    if (req.path.match(/\.[a-zA-Z0-9]+$/)) return next();
+    res.send(indexHtml);
+  });
+}
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📧 OTP API: POST http://localhost:${PORT}/api/send-otp`);
-  console.log(`📝 Mock email service active (no external connections)`);
+  console.log(`📧 Email service: ${process.env.SENDGRID_API_KEY ? 'SendGrid' : 'Mock'}`);
 });
