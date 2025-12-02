@@ -166,6 +166,7 @@ import "./Register.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import toast from "react-hot-toast";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -192,13 +193,17 @@ function Register() {
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords don't match");
+      const errorMsg = "Passwords don't match";
+      setError(errorMsg);
+      toast.error(errorMsg);
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+      const errorMsg = "Password must be at least 6 characters";
+      setError(errorMsg);
+      toast.error(errorMsg);
       setLoading(false);
       return;
     }
@@ -214,51 +219,67 @@ function Register() {
           data: {
             full_name: formData.fullName,
             role: 'user'
-          }
+          },
+          emailRedirectTo: window.location.origin + '/login'
         }
       });
 
       if (authError) {
+        console.error("Auth error:", authError);
         if (authError.message.includes('already registered')) {
+          toast.error("This email is already registered");
           throw new Error("This email is already registered");
         }
+        toast.error(authError.message);
         throw new Error(authError.message);
       }
 
-      // 2️⃣ Save extra user info in 'Registered' table (optional)
-      // If you still want to use your custom table alongside Supabase Auth
-      const { data, error } = await supabase
-        .from('Registered')
-        .insert([
-          {
-            FullName: formData.fullName,
-            Email: formData.email,
-            role: 'user',
-            auth_id: authData.user?.id  // link to Supabase Auth user
-          }
-        ])
-        .select();
+      // Check if user already exists
+      if (authData.user && !authData.user.identities?.length) {
+        toast.error("User already exists. Please login instead.");
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
 
-      if (error) {
-        console.warn("Could not save to Registered table:", error.message);
-        // Continue anyway - auth user was created
+      // 2️⃣ Save extra user info in 'Registered' table (optional)
+      if (authData.user) {
+        const { error: tableError } = await supabase
+          .from('Registered')
+          .insert([
+            {
+              FullName: formData.fullName,
+              Email: formData.email,
+              role: 'user',
+              auth_id: authData.user.id
+            }
+          ]);
+
+        if (tableError) {
+          console.warn("Could not save to Registered table:", tableError.message);
+          // Continue anyway - auth user was created
+        }
       }
 
       console.log("Registration successful:", authData);
       
-      if (authData.user && !authData.user.identities?.length) {
-        // User already exists
-        alert('⚠️ User already exists. Please login instead.');
-        navigate('/login');
-      } else if (authData.user) {
-        // New user created
-        alert('✅ Registration successful! Please check your email to verify your account.');
-        navigate('/login');
+      // Check if email confirmation is enabled
+      if (authData.user?.email_confirmed_at) {
+        // Email confirmation is disabled - user can login immediately
+        toast.success("Registration successful! You can now login.");
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        // Email confirmation is enabled
+        toast.success(
+          "Registration successful! Please check your email to verify your account.",
+          { duration: 6000 }
+        );
+        setTimeout(() => navigate('/login'), 2000);
       }
 
     } catch (error) {
       console.error('Registration error:', error);
       setError(error.message);
+      toast.error(error.message || "Registration failed");
     } finally {
       setLoading(false);
     }
