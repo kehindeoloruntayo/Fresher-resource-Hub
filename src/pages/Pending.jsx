@@ -1,4 +1,4 @@
-import "./Pending.css";
+import "./pending.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
