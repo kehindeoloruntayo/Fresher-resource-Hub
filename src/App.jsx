@@ -13,6 +13,8 @@ import ResourceDetail from "./pages/ResourceDetail";
 import Resources from "./pages/Resources";
 import Pending from "./pages/Pending";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import OTPVerification from "./pages/OTPVerification";
 
 function App() {
   return (
@@ -32,6 +34,8 @@ function App() {
             <Route path="/resources" element={<Resources />} />
             <Route path="/pending" element={<Pending />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
+            <Route path="/verify-otp" element={<OTPVerification />} />
           </Routes>
         </main>
         <Footer />
