@@ -1,10 +1,9 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "../lib/supabase"; 
 import "./Nav.css";
 
-function NavbarUser() {
+function NavbarAdmin() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -19,14 +18,13 @@ function NavbarUser() {
         return;
       }
       
-      // Clear session storage
+      
       sessionStorage.removeItem("user");
       sessionStorage.removeItem("admin");
       
       closeMenu();
       navigate("/login");
-      // Optional: You can reload to ensure clean state
-      // window.location.reload();
+      
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -50,12 +48,13 @@ function NavbarUser() {
       </button>
 
       <ul className={`nav-links ${isOpen ? "active" : ""}`}>
-        <li><Link to="/dashboard" onClick={closeMenu}>Dashboard</Link></li>
+        <li><Link to="/admin" onClick={closeMenu}> Admin Dashboard</Link></li>
         <li><Link to="/upload" onClick={closeMenu}>Upload</Link></li>
+         <li><Link to="/pending" onClick={closeMenu}>Pending</Link></li>
         <li><button className="logout-btn" onClick={logoutUser}>Logout</button></li>
       </ul>
     </nav>
   );
 }
 
-export default NavbarUser;
+export default NavbarAdmin;

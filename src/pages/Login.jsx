@@ -1,6 +1,6 @@
 
 
-// src/pages/Login.jsx
+
 import "./login.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -31,7 +31,7 @@ function Login() {
     try {
       console.log("Attempting login for:", formData.email);
 
-      // Use Supabase Auth for login
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -42,7 +42,7 @@ function Login() {
         console.log("Error code:", error.code);
         console.log("Error status:", error.status);
         
-        // Handle different error types
+        
         if (error.message.includes("Email not confirmed")) {
           toast.error("Please verify your email first. Check your inbox for the confirmation link.");
           setError("Email not verified. Please check your email inbox.");
@@ -62,66 +62,69 @@ function Login() {
         return;
       }
 
-      console.log("Login successful:", data.user);
-      console.log("User email confirmed:", data.user.email_confirmed_at);
-      toast.success("Login successful!");
+  
 
-      // Get additional user info from your Registered table
-      const { data: userData, error: userError } = await supabase
-        .from("Registered")
-        .select("*")
-        .eq("Email", formData.email)
-        .maybeSingle();
+   console.log("Login successful:", data.user);
+    console.log("User email confirmed:", data.user.email_confirmed_at);
+    toast.success("Login successful!");
 
-      if (userError) {
-        console.warn("Could not fetch user data from Registered table:", userError);
-      }
+    
+    const { data: userData, error: userError } = await supabase
+      .from("Registered")
+      .select("*")
+      .eq("Email", formData.email)
+      .maybeSingle();
 
-      // If user not in Registered table, create entry now
-      if (!userData) {
-        console.log("User not found in Registered table, creating entry...");
-        const { error: insertError } = await supabase
-          .from("Registered")
-          .insert([
-            {
-              FullName: data.user.user_metadata?.full_name || "User",
-              Email: data.user.email,
-              role: data.user.user_metadata?.role || 'user',
-              auth_id: data.user.id
-            }
-          ]);
-
-        if (insertError) {
-          console.error("Could not create Registered entry:", insertError);
-        }
-      }
-
-      // Create user session
-      const userSession = {
-        id: data.user.id,
-        FullName: userData?.FullName || data.user.user_metadata?.full_name || "User",
-        Email: data.user.email,
-        role: userData?.role || data.user.user_metadata?.role || 'user'
-      };
-
-      console.log("User session:", userSession);
-      sessionStorage.setItem("user", JSON.stringify(userSession));
-      
-      // Navigate based on role
-      if (userSession.role === 'admin') {
-        sessionStorage.setItem("admin", "true");
-        navigate("/admin");
-      } else {
-        navigate("/dashboard");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("An error occurred. Please try again.");
-      setError(error.message);
-    } finally {
-      setLoading(false);
+    if (userError) {
+      console.warn("Could not fetch user data from Registered table:", userError);
     }
-  };
+
+    
+    if (!userData) {
+      console.log("User not found in Registered table, creating entry...");
+      const { error: insertError } = await supabase
+        .from("Registered")
+        .insert([
+          {
+            FullName: data.user.user_metadata?.full_name || "User",
+            Email: data.user.email,
+            role: data.user.user_metadata?.role || 'user',
+            auth_id: data.user.id
+          }
+        ]);
+
+      if (insertError) {
+        console.error("Could not create Registered entry:", insertError);
+      }
+    }
+
+    
+    const userSession = {
+      id: data.user.id,
+      FullName: userData?.FullName || data.user.user_metadata?.full_name || "User",
+      Email: data.user.email,
+      role: userData?.role || data.user.user_metadata?.role || 'user',
+      session: data.session 
+    };
+
+    console.log("User session:", userSession);
+    sessionStorage.setItem("user", JSON.stringify(userSession));
+    
+    
+    if (userSession.role === 'admin') {
+      sessionStorage.setItem("admin", "true");
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    toast.error("An error occurred. Please try again.");
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="auth-container">

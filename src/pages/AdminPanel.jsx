@@ -61,7 +61,7 @@ function AdminPanel() {
     }
   };
 
-  const handleApprove = async (uploadId) => {
+  const handleApprove = async (uploadId) => { 
     try {
       const { error } = await supabase
         .from('uploads')

@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import { supabase } from "./lib/supabase";
 import Navbar from "./components/Navbar";
 import NavbarUser from "./components/NavbarUser";
 import Footer from "./components/Footer";
@@ -18,13 +18,87 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import OTPVerification from "./pages/OTPVerification";
 import { Toaster } from "react-hot-toast";
+import ProtectedRoute from "./pages/ProtectedRoute";
+import NavbarAdmin from "./components/NavbarAdmin";
 
 function App() {
-  const isLoggedIn = !!localStorage.getItem("authToken");
+  const [session, setSession] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      
+      
+      if (session) {
+        const storedUser = sessionStorage.getItem("user");
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setUserRole(userData.role);
+        } else {
+          
+          try {
+            const { data: userData } = await supabase
+              .from("Registered")
+              .select("role")
+              .eq("Email", session.user.email)
+              .single();
+            
+            if (userData) {
+              setUserRole(userData.role);
+            }
+          } catch (error) {
+            console.error("Error fetching user role:", error);
+          }
+        }
+      }
+      
+      setLoading(false);
+    });
+
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        
+        if (session) {
+          
+          const storedUser = sessionStorage.getItem("user");
+          if (storedUser) {
+            const userData = JSON.parse(storedUser);
+            setUserRole(userData.role);
+          }
+        } else {
+          setUserRole(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const renderNavbar = () => {
+    if (!session) {
+      return <Navbar />; 
+    }
+    
+    
+    if (userRole === 'admin') {
+      return <NavbarAdmin />;
+    } else {
+      return <NavbarUser />;
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <Router>
-      {isLoggedIn ? <NavbarUser /> : <Navbar />}
+      {renderNavbar()}
 
       <Toaster
         position="top-center"
@@ -52,8 +126,6 @@ function App() {
       />
 
       <div className="app-shell">
-        {/* <Navbar />
-          <NavbarUser /> */}
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -70,6 +142,42 @@ function App() {
             <Route path="reset-password" element={<ResetPassword />} />
             <Route path="/verify-otp" element={<OTPVerification />} />
           </Routes>
+          
+<Routes>
+  
+  <Route path="/" element={<Home />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/register" element={<Register />} />
+  <Route path="/resource/:id" element={<ResourceDetail />} />
+  <Route path="/resources" element={<Resources />} />
+  <Route path="/forgot-password" element={<ForgotPassword />} />
+  <Route path="/reset-password" element={<ResetPassword />} />
+  <Route path="/verify-otp" element={<OTPVerification />} />
+
+  {/* Protected routes (require authentication) */}
+  <Route path="/dashboard" element={
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  } />
+  <Route path="/upload" element={
+    <ProtectedRoute>
+      <Upload />
+    </ProtectedRoute>
+  } />
+
+  {/* Admin-only routes */}
+  <Route path="/admin" element={
+    <ProtectedRoute requireAdmin={true}>
+      <AdminPanel />
+    </ProtectedRoute>
+  } />
+  <Route path="/pending" element={
+    <ProtectedRoute requireAdmin={true}>
+      <Pending />
+    </ProtectedRoute>
+  } />
+</Routes>
         </main>
         <Footer />
       </div>
