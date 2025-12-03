@@ -27,25 +27,22 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      
-      
+
       if (session) {
         const storedUser = sessionStorage.getItem("user");
         if (storedUser) {
           const userData = JSON.parse(storedUser);
           setUserRole(userData.role);
         } else {
-          
           try {
             const { data: userData } = await supabase
               .from("Registered")
               .select("role")
               .eq("Email", session.user.email)
               .single();
-            
+
             if (userData) {
               setUserRole(userData.role);
             }
@@ -54,38 +51,35 @@ function App() {
           }
         }
       }
-      
+
       setLoading(false);
     });
 
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        
-        if (session) {
-          
-          const storedUser = sessionStorage.getItem("user");
-          if (storedUser) {
-            const userData = JSON.parse(storedUser);
-            setUserRole(userData.role);
-          }
-        } else {
-          setUserRole(null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+
+      if (session) {
+        const storedUser = sessionStorage.getItem("user");
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setUserRole(userData.role);
         }
+      } else {
+        setUserRole(null);
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const renderNavbar = () => {
     if (!session) {
-      return <Navbar />; 
+      return <Navbar />;
     }
-    
-    
-    if (userRole === 'admin') {
+
+    if (userRole === "admin") {
       return <NavbarAdmin />;
     } else {
       return <NavbarUser />;
@@ -129,7 +123,6 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/resource/:id" element={<ResourceDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -137,47 +130,47 @@ function App() {
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/admin-access" element={<AdminAccess />} />
             <Route path="/resources" element={<Resources />} />
+            <Route path="/resource/:id" element={<ResourceDetail />} />
             <Route path="/pending" element={<Pending />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="reset-password" element={<ResetPassword />} />
             <Route path="/verify-otp" element={<OTPVerification />} />
+            {/* Protected routes (require authentication) */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/upload"
+              element={
+                <ProtectedRoute>
+                  <Upload />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin-only routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pending"
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <Pending />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
-          
-<Routes>
-  
-  <Route path="/" element={<Home />} />
-  <Route path="/login" element={<Login />} />
-  <Route path="/register" element={<Register />} />
-  <Route path="/resource/:id" element={<ResourceDetail />} />
-  <Route path="/resources" element={<Resources />} />
-  <Route path="/forgot-password" element={<ForgotPassword />} />
-  <Route path="/reset-password" element={<ResetPassword />} />
-  <Route path="/verify-otp" element={<OTPVerification />} />
-
-  {/* Protected routes (require authentication) */}
-  <Route path="/dashboard" element={
-    <ProtectedRoute>
-      <Dashboard />
-    </ProtectedRoute>
-  } />
-  <Route path="/upload" element={
-    <ProtectedRoute>
-      <Upload />
-    </ProtectedRoute>
-  } />
-
-  {/* Admin-only routes */}
-  <Route path="/admin" element={
-    <ProtectedRoute requireAdmin={true}>
-      <AdminPanel />
-    </ProtectedRoute>
-  } />
-  <Route path="/pending" element={
-    <ProtectedRoute requireAdmin={true}>
-      <Pending />
-    </ProtectedRoute>
-  } />
-</Routes>
         </main>
         <Footer />
       </div>
