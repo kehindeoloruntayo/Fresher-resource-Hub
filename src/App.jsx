@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import AdminPanel from "./pages/AdminPanel";
+import AdminAccess from "./pages/AdminAccess";
 import ResourceDetail from "./pages/ResourceDetail";
 import Resources from "./pages/Resources";
 import Pending from "./pages/Pending";
@@ -25,26 +26,26 @@ function App() {
     <Router>
       {isLoggedIn ? <NavbarUser /> : <Navbar />}
 
-       <Toaster 
+      <Toaster
         position="top-center"
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#363636',
-            color: '#fff',
+            background: "#363636",
+            color: "#fff",
           },
           success: {
             duration: 3000,
             iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
+              primary: "#10b981",
+              secondary: "#fff",
             },
           },
           error: {
             duration: 4000,
             iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
+              primary: "#ef4444",
+              secondary: "#fff",
             },
           },
         }}
@@ -62,7 +63,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/resources" element={<Resources />} />
+            <Route path="/admin-access" element={<AdminAccess />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/pending" element={<Pending />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
