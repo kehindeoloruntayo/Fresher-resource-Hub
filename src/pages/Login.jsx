@@ -113,9 +113,13 @@ function Login() {
     
     if (userSession.role === 'admin') {
       sessionStorage.setItem("admin", "true");
+       
       navigate("/admin");
+      window.location.reload();
+      
     } else {
       navigate("/dashboard");
+      window.location.reload();
     }
   } catch (error) {
     console.error("Login error:", error);
