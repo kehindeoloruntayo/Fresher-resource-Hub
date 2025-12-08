@@ -29,7 +29,7 @@ function Register() {
     setLoading(true);
     setError("");
 
-    // Validation
+    
     if (formData.password !== formData.confirmPassword) {
       const errorMsg = "Passwords don't match";
       setError(errorMsg);
@@ -49,7 +49,7 @@ function Register() {
     try {
       console.log("Registering user:", formData.email);
 
-      // 1️⃣ Sign up using Supabase Auth
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -71,7 +71,7 @@ function Register() {
         throw new Error(authError.message);
       }
 
-      // Check if user already exists
+      
       if (authData.user && !authData.user.identities?.length) {
         toast.error("User already exists. Please login instead.");
         setTimeout(() => navigate('/login'), 2000);
@@ -80,9 +80,9 @@ function Register() {
 
       console.log("Auth user created:", authData.user);
 
-      // 2️⃣ Save user info in 'Registered' table
+      
       if (authData.user) {
-        console.log("Saving to Registered table...");
+       
         
         const { data: insertData, error: tableError } = await supabase
           .from('Registered')
@@ -99,12 +99,11 @@ function Register() {
         if (tableError) {
           console.error("Error saving to Registered table:", tableError);
           
-          // Check if it's a duplicate or missing column error
           if (tableError.code === '23505') {
-            console.log("User already in Registered table");
+            // console.log("User already in Registered table");
           } else if (tableError.message.includes('auth_id')) {
             // Try without auth_id if column doesn't exist
-            console.log("Retrying without auth_id column...");
+            // console.log("Retrying without auth_id column...");
             const { error: retryError } = await supabase
               .from('Registered')
               .insert([
@@ -116,7 +115,7 @@ function Register() {
               ]);
             
             if (retryError) {
-              console.error("Retry failed:", retryError);
+              // console.error("Retry failed:", retryError);
               toast.warning("Account created but profile setup incomplete");
             }
           } else {
@@ -126,10 +125,7 @@ function Register() {
           console.log("Successfully saved to Registered table:", insertData);
         }
       }
-
-      console.log("Registration successful!");
       
-      // User can login immediately - no email confirmation needed
       toast.success("Registration successful! You can now login.");
       setTimeout(() => navigate('/login'), 2000);
 
