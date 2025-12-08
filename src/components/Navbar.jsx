@@ -32,11 +32,10 @@ function Navbar() {
       {/* Navigation Links */}
       <ul className={`nav-links ${isOpen ? "active" : ""}`}>
         <li><Link to="/" onClick={closeMenu}>Home</Link></li>
-        <li><Link to="/dashboard" onClick={closeMenu}>Dashboard</Link></li>
         <li><Link to="/upload" onClick={closeMenu}>Upload</Link></li>
         <li><Link to="/login" onClick={closeMenu}>Login</Link></li>
         <li><Link to="/register" onClick={closeMenu}>Register</Link></li>
-        
+
       </ul>
     </nav>
   );
