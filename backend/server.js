@@ -19,7 +19,7 @@ const OTP_EXPIRY_MINUTES = 10;
 
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174','https://fresher-resource-hub.onrender.com','https://fresher-resource-hub.onrender.com',], 
+  origin: ['http://localhost:5173', 'http://localhost:5174','https://fresher-resource-hub.onrender.com','https://fresher-resource-hub-backend.onrender.com',], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
