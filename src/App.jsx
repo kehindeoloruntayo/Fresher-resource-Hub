@@ -1,5 +1,269 @@
 
 
+// import React, { useEffect, useState } from "react";
+// import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+// import Navbar from "./components/Navbar";
+// import NavbarUser from "./components/NavbarUser";
+// import NavbarAdmin from "./components/NavbarAdmin";
+// import Footer from "./components/Footer";
+// import Home from "./pages/Home";
+// import Login from "./pages/Login";
+// import Register from "./pages/Register";
+// import Dashboard from "./pages/Dashboard";
+// import Upload from "./pages/Upload";
+// import AdminPanel from "./pages/AdminPanel";
+// import AdminAccess from "./pages/AdminAccess";
+// import ResourceDetail from "./pages/ResourceDetail";
+// import Resources from "./pages/Resources";
+// import Pending from "./pages/Pending";
+// import ForgotPassword from "./pages/ForgotPassword";
+// import ResetPassword from "./pages/ResetPassword";
+// import OTPVerification from "./pages/OTPVerification";
+// import { Toaster } from "react-hot-toast";
+// import ProtectedRoute from "./pages/ProtectedRoute";
+
+
+// const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+
+// function App() {
+//   const [user, setUser] = useState(null);
+//   const [userRole, setUserRole] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const navigate = useNavigate();
+
+  
+//   useEffect(() => {
+//     checkSession();
+    
+    
+//     const intervalId = setInterval(checkSession, 30000);
+    
+//     return () => clearInterval(intervalId);
+//   }, []);
+
+  
+//   const checkSession = async () => {
+//     try {
+//       const storedUser = sessionStorage.getItem("user");
+      
+//       if (!storedUser) {
+//         setUser(null);
+//         setUserRole(null);
+//         setLoading(false);
+//         return;
+//       }
+
+//       const userData = JSON.parse(storedUser);
+      
+      
+//       if (userData.sessionId) {
+//         try {
+//           const response = await fetch(`${API_BASE_URL}/api/validate-session`, {
+//             method: 'POST',
+//             headers: {
+//               'Content-Type': 'application/json',
+//             },
+//             body: JSON.stringify({ sessionId: userData.sessionId })
+//           });
+
+//           if (response.ok) {
+//             const { success, user: validatedUser } = await response.json();
+            
+//             if (success) {
+              
+//               setUser({
+//                 ...userData,
+//                 ...validatedUser
+//               });
+//               setUserRole(validatedUser.role);
+//               setLoading(false);
+//               return;
+//             }
+//           }
+//         } catch (error) {
+//           console.log("Session validation failed:", error.message);
+//         }
+//       }
+
+      
+//       if (userData.expiresAt && Date.now() > userData.expiresAt) {
+       
+//         sessionStorage.removeItem("user");
+//         sessionStorage.removeItem("admin");
+//         setUser(null);
+//         setUserRole(null);
+//       } else {
+        
+//         setUser(userData);
+//         setUserRole(userData.role);
+//       }
+      
+//       setLoading(false);
+      
+//     } catch (error) {
+//       console.error("Error checking session:", error);
+//       setUser(null);
+//       setUserRole(null);
+//       setLoading(false);
+//     }
+//   };
+
+  
+//   const handleLogout = async () => {
+//     try {
+//       const storedUser = sessionStorage.getItem("user");
+      
+//       if (storedUser) {
+//         const userData = JSON.parse(storedUser);
+        
+        
+//         if (userData.sessionId) {
+//           await fetch(`${API_BASE_URL}/api/logout`, {
+//             method: 'POST',
+//             headers: {
+//               'Content-Type': 'application/json',
+//             },
+//             body: JSON.stringify({ sessionId: userData.sessionId })
+//           }).catch(error => {
+//             console.log("Logout API call failed:", error);
+            
+//           });
+//         }
+//       }
+      
+      
+//       sessionStorage.removeItem("user");
+//       sessionStorage.removeItem("admin");
+      
+      
+//       setUser(null);
+//       setUserRole(null);
+      
+     
+//       navigate("/");
+//       window.location.reload();
+      
+//     } catch (error) {
+//       console.error("Logout error:", error);
+//     }
+//   };
+
+//   const renderNavbar = () => {
+//     if (!user) {
+//       return <Navbar />;
+//     }
+
+//     if (userRole === "admin") {
+//       return <NavbarAdmin user={user} onLogout={handleLogout} />;
+//     } else {
+//       return <NavbarUser user={user} onLogout={handleLogout} />;
+//     }
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="loading-screen">
+//         <div className="loading-spinner"></div>
+//         <p>Loading...</p>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <>
+//       {renderNavbar()}
+
+//       <Toaster
+//         position="top-center"
+//         toastOptions={{
+//           duration: 4000,
+//           style: {
+//             background: "#363636",
+//             color: "#fff",
+//           },
+//           success: {
+//             duration: 3000,
+//             iconTheme: {
+//               primary: "#10b981",
+//               secondary: "#fff",
+//             },
+//           },
+//           error: {
+//             duration: 4000,
+//             iconTheme: {
+//               primary: "#ef4444",
+//               secondary: "#fff",
+//             },
+//           },
+//         }}
+//       />
+
+//       <div className="app-shell">
+//         <main className="main-content">
+//           <Routes>
+//             <Route path="/" element={<Home />} />
+//             <Route path="/login" element={<Login setUser={setUser} setUserRole={setUserRole} />} />
+//             <Route path="/register" element={<Register />} />
+//             <Route path="/resources" element={<Resources />} />
+//             <Route path="/resource/:id" element={<ResourceDetail />} />
+//             <Route path="/forgot-password" element={<ForgotPassword />} />
+//             <Route path="/verify-otp" element={<OTPVerification />} />
+//             <Route path="/reset-password" element={<ResetPassword />} />
+//             <Route path="/admin-access" element={<AdminAccess />} />
+            
+//             {/* Protected routes */}
+//             <Route
+//               path="/dashboard"
+//               element={
+//                 <ProtectedRoute user={user} userRole={userRole}>
+//                   <Dashboard />
+//                 </ProtectedRoute>
+//               }
+//             />
+//             <Route
+//               path="/upload"
+//               element={
+//                 <ProtectedRoute user={user} userRole={userRole}>
+//                   <Upload />
+//                 </ProtectedRoute>
+//               }
+//             />
+
+//             {/* Admin-only routes */}
+//             <Route
+//               path="/admin"
+//               element={
+//                 <ProtectedRoute user={user} userRole={userRole} requireAdmin={true}>
+//                   <AdminPanel />
+//                 </ProtectedRoute>
+//               }
+//             />
+//             <Route
+//               path="/pending"
+//               element={
+//                 <ProtectedRoute user={user} userRole={userRole} requireAdmin={true}>
+//                   <Pending />
+//                 </ProtectedRoute>
+//               }
+//             />
+//           </Routes>
+//         </main>
+//         <Footer />
+//       </div>
+//     </>
+//   );
+// }
+
+
+// export default function AppWrapper() {
+//   return (
+//     <Router>
+//       <App />
+//     </Router>
+//   );
+// }
+
+
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
@@ -22,31 +286,35 @@ import OTPVerification from "./pages/OTPVerification";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./pages/ProtectedRoute";
 
-
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-function App() {
+// Create a separate component that uses useNavigate
+function AppContent() {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  
+  // Check session on component mount
   useEffect(() => {
+    console.log('🔍 AppContent mounted');
     checkSession();
-    
     
     const intervalId = setInterval(checkSession, 30000);
     
     return () => clearInterval(intervalId);
   }, []);
 
-  
+  // Check session from sessionStorage and validate with backend
   const checkSession = async () => {
+    console.log('🔍 checkSession called');
+    
     try {
       const storedUser = sessionStorage.getItem("user");
+      console.log('🔍 Stored user:', storedUser ? 'Found' : 'Not found');
       
       if (!storedUser) {
+        console.log('🔍 No user in sessionStorage');
         setUser(null);
         setUserRole(null);
         setLoading(false);
@@ -54,9 +322,11 @@ function App() {
       }
 
       const userData = JSON.parse(storedUser);
+      console.log('🔍 User data:', userData);
       
-      
+      // Validate session with backend
       if (userData.sessionId) {
+        console.log('🔍 Validating session with backend...');
         try {
           const response = await fetch(`${API_BASE_URL}/api/validate-session`, {
             method: 'POST',
@@ -66,11 +336,14 @@ function App() {
             body: JSON.stringify({ sessionId: userData.sessionId })
           });
 
+          console.log('🔍 Validation response status:', response.status);
+          
           if (response.ok) {
             const { success, user: validatedUser } = await response.json();
+            console.log('🔍 Validation result:', { success, validatedUser });
             
             if (success) {
-              
+              console.log('✅ Session validated');
               setUser({
                 ...userData,
                 ...validatedUser
@@ -81,19 +354,21 @@ function App() {
             }
           }
         } catch (error) {
-          console.log("Session validation failed:", error.message);
+          console.log("❌ Session validation failed:", error.message);
         }
       }
 
-      
+      // If session validation failed or no sessionId, check expiration
       if (userData.expiresAt && Date.now() > userData.expiresAt) {
-       
+        // Session expired
+        console.log('❌ Session expired');
         sessionStorage.removeItem("user");
         sessionStorage.removeItem("admin");
         setUser(null);
         setUserRole(null);
       } else {
-        
+        // Use stored session (for offline or if backend unavailable)
+        console.log('✅ Using stored session');
         setUser(userData);
         setUserRole(userData.role);
       }
@@ -101,22 +376,24 @@ function App() {
       setLoading(false);
       
     } catch (error) {
-      console.error("Error checking session:", error);
+      console.error("❌ Error checking session:", error);
       setUser(null);
       setUserRole(null);
       setLoading(false);
     }
   };
 
-  
+  // Logout function
   const handleLogout = async () => {
+    console.log('🔍 Logout called');
+    
     try {
       const storedUser = sessionStorage.getItem("user");
       
       if (storedUser) {
         const userData = JSON.parse(storedUser);
         
-        
+        // Call backend logout endpoint
         if (userData.sessionId) {
           await fetch(`${API_BASE_URL}/api/logout`, {
             method: 'POST',
@@ -126,22 +403,22 @@ function App() {
             body: JSON.stringify({ sessionId: userData.sessionId })
           }).catch(error => {
             console.log("Logout API call failed:", error);
-            
+            // Continue with client-side logout anyway
           });
         }
       }
       
-      
+      // Clear client-side storage
       sessionStorage.removeItem("user");
       sessionStorage.removeItem("admin");
       
-      
+      // Update state
       setUser(null);
       setUserRole(null);
       
-     
+      // Redirect to home WITHOUT reload
+      console.log('🔍 Navigating to home');
       navigate("/");
-      window.location.reload();
       
     } catch (error) {
       console.error("Logout error:", error);
@@ -149,13 +426,18 @@ function App() {
   };
 
   const renderNavbar = () => {
+    console.log('🔍 renderNavbar - user:', user?.Email, 'role:', userRole);
+    
     if (!user) {
+      console.log('🔍 Rendering default Navbar');
       return <Navbar />;
     }
 
     if (userRole === "admin") {
+      console.log('🔍 Rendering NavbarAdmin');
       return <NavbarAdmin user={user} onLogout={handleLogout} />;
     } else {
+      console.log('🔍 Rendering NavbarUser');
       return <NavbarUser user={user} onLogout={handleLogout} />;
     }
   };
@@ -254,11 +536,13 @@ function App() {
   );
 }
 
-
-export default function AppWrapper() {
+// Main App component with Router
+function App() {
   return (
     <Router>
-      <App />
+      <AppContent />
     </Router>
   );
 }
+
+export default App;
