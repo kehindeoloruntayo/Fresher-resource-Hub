@@ -75,8 +75,14 @@
 * Activity logs
 * Rate limiting for uploads
 
-## Notice
-Fresher resource Hub is licensed under the MIT License — free to use, modify, and distribute.
+## Copyright & License
+
+© 2025 kehindeoloruntayo. All rights reserved.
+
+Fresher resource Hub is **not open source**.  
+You may not copy, modify, distribute, or use this code (in whole or in part) without explicit written permission from the author.
+
+For inquiries: kehindeoloruntayo1@gmail.com
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
