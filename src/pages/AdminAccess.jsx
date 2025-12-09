@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import "./AdminAccess.css";
@@ -28,26 +30,23 @@ export default function AdminAccess() {
   const checkCurrentUser = async () => {
     try {
       
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      const storedUser = sessionStorage.getItem("user");
       
-      if (authError) {
-        console.error("Auth error:", authError);
+      if (!storedUser) {
+        console.error("No user found in sessionStorage");
         toast.error("Please login to access admin panel");
         navigate("/login");
         return;
       }
 
-      if (!authUser) {
-        toast.error("No user logged in");
-        navigate("/login");
-        return;
-      }
+      const user = JSON.parse(storedUser);
+     
 
-      
+     
       const { data: userData, error: userError } = await supabase
         .from('Registered')
         .select('*')
-        .eq('auth_id', authUser.id)
+        .eq('Email', user.Email)
         .single();
 
       if (userError) {
@@ -58,10 +57,9 @@ export default function AdminAccess() {
           .from('Registered')
           .insert([
             {
-              FullName: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
-              Email: authUser.email,
-              role: 'user',
-              auth_id: authUser.id,
+              FullName: user.FullName || user.Email?.split('@')[0] || 'User',
+              Email: user.Email,
+              role: user.role || 'user',
               upload_disabled: false,
               created_at: new Date().toISOString()
             }
@@ -71,7 +69,7 @@ export default function AdminAccess() {
           const { data: newUserData } = await supabase
             .from('Registered')
             .select('*')
-            .eq('auth_id', authUser.id)
+            .eq('Email', user.Email)
             .single();
           
           setCurrentUser(newUserData);
@@ -100,7 +98,6 @@ export default function AdminAccess() {
       if (error) {
         console.error("Error fetching users:", error);
         
-        
         if (error.message.includes('permission denied') || error.message.includes('policy')) {
           toast.error("Permission denied. You may not have admin privileges.");
           return;
@@ -110,7 +107,7 @@ export default function AdminAccess() {
       }
 
       if (data) {
-        
+       
         const formattedUsers = data.map(user => ({
           ...user,
           role: user.role || 'user',
@@ -150,7 +147,7 @@ export default function AdminAccess() {
 
       if (error) throw error;
 
-      
+     
       setUsers(users.map(user => 
         user.id === userId 
           ? { ...user, upload_disabled: !currentStatus }
@@ -231,7 +228,7 @@ export default function AdminAccess() {
         return;
       }
 
-      
+     
       const { error: updateError } = await supabase
         .from('Registered')
         .update({ role: 'admin' })
@@ -239,7 +236,7 @@ export default function AdminAccess() {
 
       if (updateError) throw updateError;
 
-      
+     
       setUsers(users.map(user => 
         user.id === userData.id 
           ? { ...user, role: 'admin' }
@@ -272,7 +269,7 @@ export default function AdminAccess() {
 
       if (error) throw error;
 
-      
+     
       setUsers(users.map(user => 
         user.id === userId 
           ? { ...user, role: 'user' }
@@ -307,6 +304,16 @@ export default function AdminAccess() {
       console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
     }
+  };
+
+  const handleLogout = () => {
+   
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("admin");
+    
+   
+    navigate("/login");
+    window.location.reload(); 
   };
 
   if (!currentUser) {
@@ -352,10 +359,7 @@ export default function AdminAccess() {
             </button>
             <button 
               className="logout-btn" 
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate("/login");
-              }}
+              onClick={handleLogout}
             >
               Logout
             </button>
@@ -426,7 +430,6 @@ export default function AdminAccess() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    {/* <th>ID</th> */}
                     <th>Full Name</th>
                     <th>Email</th>
                     <th>Role</th>
@@ -438,14 +441,13 @@ export default function AdminAccess() {
                 <tbody>
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="no-data">
+                      <td colSpan="6" className="no-data">
                         {search ? "No users found matching your search" : "No users found"}
                       </td>
                     </tr>
                   ) : (
                     filteredUsers.map((user) => (
                       <tr key={user.id} className={user.id === currentUser.id ? 'current-user' : ''}>
-                        {/* <td className="user-id">#{user.id?.toString().substring(0, 8)}</td> */}
                         <td>
                           <div className="user-info">
                             <span className="user-name">{user.FullName}</span>

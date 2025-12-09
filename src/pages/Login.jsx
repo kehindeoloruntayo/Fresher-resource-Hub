@@ -5,7 +5,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
-console.log('API Base URL:', API_BASE_URL);
+// console.log('API Base URL:', API_BASE_URL);
 
 function Login({ setUser, setUserRole }) {
   const [formData, setFormData] = useState({
@@ -29,8 +29,7 @@ function Login({ setUser, setUserRole }) {
     setError("");
 
     try {
-      console.log("Attempting login for:", formData.email);
-      console.log("Connecting to:", `${API_BASE_URL}/api/login`);
+     
 
       const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
@@ -43,7 +42,7 @@ function Login({ setUser, setUserRole }) {
         })
       });
 
-      console.log('Response status:', response.status);
+      
       
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -53,7 +52,7 @@ function Login({ setUser, setUserRole }) {
       }
 
       const data = await response.json();
-      console.log('Response data:', data);
+      
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -77,7 +76,7 @@ function Login({ setUser, setUserRole }) {
         return;
       }
 
-      console.log("Login successful:", data);
+      
       toast.success("Login successful!");
 
      
@@ -90,7 +89,7 @@ function Login({ setUser, setUserRole }) {
         expiresAt: data.expiresAt
       };
 
-      console.log("User session:", userSession);
+      
       sessionStorage.setItem("user", JSON.stringify(userSession));
 
       if (userSession.role === 'admin') {

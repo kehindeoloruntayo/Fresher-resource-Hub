@@ -1,3 +1,5 @@
+
+
 import "./Upload.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +19,7 @@ function Upload() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check current user and upload permissions
+  
   useEffect(() => {
     checkUserPermissions();
   }, []);
@@ -25,57 +27,60 @@ function Upload() {
   const checkUserPermissions = async () => {
     setLoading(true);
     try {
-      // Get auth user
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+     
+      const storedUser = sessionStorage.getItem("user");
       
-      if (authError || !authUser) {
-        console.error("Auth error:", authError);
+      if (!storedUser) {
+        console.error("No user found in sessionStorage");
         navigate("/login");
         return;
       }
 
-      // Fetch user from Registered table
-      const { data: userData, error: userError } = await supabase
+      const user = JSON.parse(storedUser);
+     
+      
+     
+      const { data: dbUserData, error: userError } = await supabase
         .from('Registered')
         .select('*')
-        .eq('auth_id', authUser.id)
+        .eq('Email', user.Email)
         .single();
 
       if (userError) {
         console.error("Error fetching user data:", userError);
         
-        // User might not exist in Registered table, create entry
+       
         const { error: insertError } = await supabase
           .from('Registered')
           .insert([
             {
-              FullName: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
-              Email: authUser.email,
-              role: 'user',
-              auth_id: authUser.id,
+              FullName: user.FullName || user.Email?.split('@')[0] || 'User',
+              Email: user.Email,
+              role: user.role || 'user',
               upload_disabled: false,
               created_at: new Date().toISOString()
             }
           ]);
 
         if (!insertError) {
-          // Retry fetching
+         
           const { data: newUserData } = await supabase
             .from('Registered')
             .select('*')
-            .eq('auth_id', authUser.id)
+            .eq('Email', user.Email)
             .single();
           
           setUserData(newUserData);
           setIsAdmin(newUserData.role === 'admin');
           setUploadDisabled(newUserData.upload_disabled || false);
         } else {
+          console.error("Insert error:", insertError);
           setMessage("❌ Error setting up user profile");
         }
       } else {
-        setUserData(userData);
-        setIsAdmin(userData.role === 'admin');
-        setUploadDisabled(userData.upload_disabled || false);
+        setUserData(dbUserData);
+        setIsAdmin(dbUserData.role === 'admin');
+        setUploadDisabled(dbUserData.upload_disabled || false);
       }
     } catch (error) {
       console.error("Error checking user permissions:", error);
@@ -97,7 +102,7 @@ function Upload() {
     const file = e.target.files[0];
     
     if (file) {
-      // Check if uploads are disabled for this user
+     
       if (uploadDisabled) {
         setMessage("❌ Your upload privileges have been disabled by an administrator.");
         e.target.value = "";
@@ -108,7 +113,7 @@ function Upload() {
         return;
       }
 
-      // Validate file size (50MB limit)
+     
       const maxSize = 50 * 1024 * 1024;
       if (file.size > maxSize) {
         setMessage("❌ File size too large. Maximum size is 50MB.");
@@ -120,7 +125,7 @@ function Upload() {
         return;
       }
 
-      // Validate file type
+      
       const allowedTypes = ['.pdf', '.ppt', '.pptx', '.doc', '.docx', '.txt', '.zip'];
       const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
       if (!allowedTypes.includes(fileExtension)) {
@@ -139,7 +144,7 @@ function Upload() {
       file: file
     }));
     
-    // Clear any previous error messages when a valid file is selected
+   
     if (file && message.includes("❌")) {
       setMessage("");
     }
@@ -148,7 +153,7 @@ function Upload() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Check if uploads are disabled
+   
     if (uploadDisabled) {
       setMessage("❌ Your upload privileges have been disabled by an administrator.");
       return;
@@ -159,7 +164,7 @@ function Upload() {
       return;
     }
 
-    // Double-check file size before upload (client-side validation)
+   
     const maxSize = 50 * 1024 * 1024;
     if (formData.file.size > maxSize) {
       setMessage("❌ File size too large. Maximum size is 50MB.");
@@ -170,26 +175,28 @@ function Upload() {
     setMessage("");
 
     try {
-      // Re-check user permissions before upload
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       
-      if (authError || !authUser) {
+      const storedUser = sessionStorage.getItem("user");
+      
+      if (!storedUser) {
         navigate("/login");
         return;
       }
 
-      // Get fresh user data to ensure permissions haven't changed
+      const user = JSON.parse(storedUser);
+
+     
       const { data: freshUserData, error: userError } = await supabase
         .from('Registered')
         .select('*')
-        .eq('auth_id', authUser.id)
+        .eq('Email', user.Email)
         .single();
 
       if (userError || !freshUserData) {
         throw new Error("User data not found");
       }
 
-      // Check if uploads are still enabled
+      
       if (freshUserData.upload_disabled) {
         setUploadDisabled(true);
         throw new Error("Your upload privileges have been disabled by an administrator.");
@@ -211,7 +218,7 @@ function Upload() {
       if (uploadError) {
         console.error("Storage error details:", uploadError);
         
-        // Check if it's a size limit error from Supabase
+       
         if (uploadError.message.includes('size') || uploadError.message.includes('large')) {
           throw new Error("File is too large. Maximum size is 50MB.");
         }
@@ -227,7 +234,7 @@ function Upload() {
 
       const status = isUserAdmin ? 'approved' : 'pending';
 
-      // Create the upload data object with only columns that exist in your table
+      
       const uploadData = {
         title: formData.title,
         description: formData.description,
@@ -241,7 +248,7 @@ function Upload() {
         created_at: new Date().toISOString()
       };
 
-      // Remove any undefined values
+     
       Object.keys(uploadData).forEach(key => {
         if (uploadData[key] === undefined || uploadData[key] === null) {
           delete uploadData[key];
@@ -284,7 +291,7 @@ function Upload() {
       console.error("Upload error:", error);
       setMessage(`❌ Upload failed: ${error.message}`);
       
-      // Update local state if upload was disabled during the process
+     
       if (error.message.includes("upload privileges have been disabled")) {
         setUploadDisabled(true);
       }
@@ -304,7 +311,7 @@ function Upload() {
     );
   }
 
-  // If user is not logged in or data not found
+ 
   if (!userData) {
     return (
       <div className="upload-container">

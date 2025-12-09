@@ -51,7 +51,7 @@ function NavbarUser() {
 
       <ul className={`nav-links ${isOpen ? "active" : ""}`}>
         <li><Link to="/dashboard" onClick={closeMenu}>Dashboard</Link></li>
-        <li><Link to="/pending" onClick={closeMenu}>Pending</Link></li>
+        <li><Link to="/pending" onClick={closeMenu}>My Uploads</Link></li>
         <li><Link to="/resources" onClick={closeMenu}>Resources</Link></li>
         <li><Link to="/upload" onClick={closeMenu}>Upload</Link></li>
         <li><button className="logout-btn" onClick={logoutUser}>Logout</button></li>

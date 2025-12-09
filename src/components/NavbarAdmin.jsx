@@ -50,6 +50,7 @@ function NavbarAdmin() {
       <ul className={`nav-links ${isOpen ? "active" : ""}`}>
         <li><Link to="/admin" onClick={closeMenu}> Admin Dashboard</Link></li>
         <li><Link to="/upload" onClick={closeMenu}>Upload</Link></li>
+        <li><Link to="/pending" onClick={closeMenu}>My Uploads</Link></li>
          <li><Link to="/admin-access" onClick={closeMenu}>Admin Access</Link></li>
       </ul>
     </nav>
