@@ -3,6 +3,7 @@
   min-height: 80vh;
   background: #f8fafc;
   color: #1e293b;
+  overflow: hidden;
 }
 
 .admin-container h1 {
