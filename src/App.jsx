@@ -1,8 +1,10 @@
+
+
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { supabase } from "./lib/supabase";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import NavbarUser from "./components/NavbarUser";
+import NavbarAdmin from "./components/NavbarAdmin";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -19,79 +21,156 @@ import ResetPassword from "./pages/ResetPassword";
 import OTPVerification from "./pages/OTPVerification";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./pages/ProtectedRoute";
-import NavbarAdmin from "./components/NavbarAdmin";
+
+
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 function App() {
-  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
+  
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-
-      if (session) {
-        const storedUser = sessionStorage.getItem("user");
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setUserRole(userData.role);
-        } else {
-          try {
-            const { data: userData } = await supabase
-              .from("Registered")
-              .select("role")
-              .eq("Email", session.user.email)
-              .single();
-
-            if (userData) {
-              setUserRole(userData.role);
-            }
-          } catch (error) {
-            console.error("Error fetching user role:", error);
-          }
-        }
-      }
-
-      setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-
-      if (session) {
-        const storedUser = sessionStorage.getItem("user");
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setUserRole(userData.role);
-        }
-      } else {
-        setUserRole(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    checkSession();
+    
+    
+    const intervalId = setInterval(checkSession, 30000);
+    
+    return () => clearInterval(intervalId);
   }, []);
 
+  
+  const checkSession = async () => {
+    try {
+      const storedUser = sessionStorage.getItem("user");
+      
+      if (!storedUser) {
+        setUser(null);
+        setUserRole(null);
+        setLoading(false);
+        return;
+      }
+
+      const userData = JSON.parse(storedUser);
+      
+      
+      if (userData.sessionId) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/validate-session`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sessionId: userData.sessionId })
+          });
+
+          if (response.ok) {
+            const { success, user: validatedUser } = await response.json();
+            
+            if (success) {
+              
+              setUser({
+                ...userData,
+                ...validatedUser
+              });
+              setUserRole(validatedUser.role);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (error) {
+          console.log("Session validation failed:", error.message);
+        }
+      }
+
+      
+      if (userData.expiresAt && Date.now() > userData.expiresAt) {
+       
+        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("admin");
+        setUser(null);
+        setUserRole(null);
+      } else {
+        
+        setUser(userData);
+        setUserRole(userData.role);
+      }
+      
+      setLoading(false);
+      
+    } catch (error) {
+      console.error("Error checking session:", error);
+      setUser(null);
+      setUserRole(null);
+      setLoading(false);
+    }
+  };
+
+  
+  const handleLogout = async () => {
+    try {
+      const storedUser = sessionStorage.getItem("user");
+      
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        
+        
+        if (userData.sessionId) {
+          await fetch(`${API_BASE_URL}/api/logout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sessionId: userData.sessionId })
+          }).catch(error => {
+            console.log("Logout API call failed:", error);
+            
+          });
+        }
+      }
+      
+      
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("admin");
+      
+      
+      setUser(null);
+      setUserRole(null);
+      
+     
+      navigate("/");
+      window.location.reload();
+      
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   const renderNavbar = () => {
-    if (!session) {
+    if (!user) {
       return <Navbar />;
     }
 
     if (userRole === "admin") {
-      return <NavbarAdmin />;
+      return <NavbarAdmin user={user} onLogout={handleLogout} />;
     } else {
-      return <NavbarUser />;
+      return <NavbarUser user={user} onLogout={handleLogout} />;
     }
   };
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   return (
-    <Router>
+    <>
       {renderNavbar()}
 
       <Toaster
@@ -123,23 +202,20 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Login setUser={setUser} setUserRole={setUserRole} />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/upload" element={<Upload />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/admin-access" element={<AdminAccess />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/resource/:id" element={<ResourceDetail />} />
-            <Route path="/pending" element={<Pending />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="reset-password" element={<ResetPassword />} />
             <Route path="/verify-otp" element={<OTPVerification />} />
-            {/* Protected routes (require authentication) */}
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/admin-access" element={<AdminAccess />} />
+            
+            {/* Protected routes */}
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute user={user} userRole={userRole}>
                   <Dashboard />
                 </ProtectedRoute>
               }
@@ -147,7 +223,7 @@ function App() {
             <Route
               path="/upload"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute user={user} userRole={userRole}>
                   <Upload />
                 </ProtectedRoute>
               }
@@ -157,7 +233,7 @@ function App() {
             <Route
               path="/admin"
               element={
-                <ProtectedRoute requireAdmin={true}>
+                <ProtectedRoute user={user} userRole={userRole} requireAdmin={true}>
                   <AdminPanel />
                 </ProtectedRoute>
               }
@@ -165,7 +241,7 @@ function App() {
             <Route
               path="/pending"
               element={
-                <ProtectedRoute requireAdmin={true}>
+                <ProtectedRoute user={user} userRole={userRole} requireAdmin={true}>
                   <Pending />
                 </ProtectedRoute>
               }
@@ -174,8 +250,15 @@ function App() {
         </main>
         <Footer />
       </div>
-    </Router>
+    </>
   );
 }
 
-export default App;
+
+export default function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
