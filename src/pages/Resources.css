@@ -446,6 +446,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .filters-grid,
+  .resources-grid {
+    grid-template-columns: 1fr;
+  }
   .results-summary {
     flex-direction: column;
     text-align: center;
