@@ -34,7 +34,7 @@ function AppContent() {
 
   
   useEffect(() => {
-    console.log('🔍 AppContent mounted');
+    
     checkSession();
     
     const intervalId = setInterval(checkSession, 30000);
@@ -44,14 +44,13 @@ function AppContent() {
 
   
   const checkSession = async () => {
-    console.log('🔍 checkSession called');
+    
     
     try {
       const storedUser = sessionStorage.getItem("user");
-      console.log('🔍 Stored user:', storedUser ? 'Found' : 'Not found');
+      
       
       if (!storedUser) {
-        console.log('🔍 No user in sessionStorage');
         setUser(null);
         setUserRole(null);
         setLoading(false);
@@ -59,11 +58,11 @@ function AppContent() {
       }
 
       const userData = JSON.parse(storedUser);
-      console.log('🔍 User data:', userData);
+      
       
       
       if (userData.sessionId) {
-        console.log('🔍 Validating session with backend...');
+        
         try {
           const response = await fetch(`${API_BASE_URL}/api/validate-session`, {
             method: 'POST',
@@ -73,14 +72,14 @@ function AppContent() {
             body: JSON.stringify({ sessionId: userData.sessionId })
           });
 
-          console.log('🔍 Validation response status:', response.status);
+         
           
           if (response.ok) {
             const { success, user: validatedUser } = await response.json();
-            console.log('🔍 Validation result:', { success, validatedUser });
+           
             
             if (success) {
-              console.log('✅ Session validated');
+             
               setUser({
                 ...userData,
                 ...validatedUser
@@ -98,7 +97,7 @@ function AppContent() {
       
       if (userData.expiresAt && Date.now() > userData.expiresAt) {
        
-        console.log('❌ Session expired');
+        
         sessionStorage.removeItem("user");
         sessionStorage.removeItem("admin");
         setUser(null);
@@ -122,7 +121,7 @@ function AppContent() {
 
  
   const handleLogout = async () => {
-    console.log('🔍 Logout called');
+    
     
     try {
       const storedUser = sessionStorage.getItem("user");
@@ -154,7 +153,7 @@ function AppContent() {
       setUserRole(null);
       
       
-      console.log('🔍 Navigating to home');
+      
       navigate("/");
       
     } catch (error) {
@@ -163,18 +162,18 @@ function AppContent() {
   };
 
   const renderNavbar = () => {
-    console.log('🔍 renderNavbar - user:', user?.Email, 'role:', userRole);
+    
     
     if (!user) {
-      console.log('🔍 Rendering default Navbar');
+     
       return <Navbar />;
     }
 
     if (userRole === "admin") {
-      console.log('🔍 Rendering NavbarAdmin');
+      
       return <NavbarAdmin user={user} onLogout={handleLogout} />;
     } else {
-      console.log('🔍 Rendering NavbarUser');
+      
       return <NavbarUser user={user} onLogout={handleLogout} />;
     }
   };
@@ -258,13 +257,13 @@ function AppContent() {
               }
             />
             <Route
-              path="/pending"
-              element={
-                <ProtectedRoute user={user} userRole={userRole} requireAdmin={true}>
-                  <Pending />
-                </ProtectedRoute>
-              }
-            />
+  path="/pending"
+  element={
+    <ProtectedRoute user={user} userRole={userRole}>
+      <Pending />
+    </ProtectedRoute>
+  }
+/>
           </Routes>
         </main>
         <Footer />

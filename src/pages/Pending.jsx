@@ -99,7 +99,7 @@ function Pending() {
   const approvedUploads = uploads.filter(upload => upload.status === 'approved');
   const rejectedUploads = uploads.filter(upload => upload.status === 'rejected');
 
-  return (
+  return ( 
     <div className="pending-container">
       <h1>My Uploads Status</h1>
       <p>Track the approval status of your uploaded documents.</p>
