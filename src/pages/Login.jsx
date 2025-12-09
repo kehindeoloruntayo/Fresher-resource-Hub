@@ -209,17 +209,18 @@ function Login() {
     try {
       console.log("Attempting login for:", formData.email);
 
-      const response = await fetch('http://localhost:3000/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        })
-      });
+      const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
+     const response = await fetch(`${API_BASE_URL}/api/login`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    email: formData.email,
+    password: formData.password
+  })
+});
       const data = await response.json();
 
       if (!response.ok) {
