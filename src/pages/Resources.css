@@ -37,7 +37,7 @@
 .resource-card {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   padding: 1rem;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -45,7 +45,7 @@
 
 .resource-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 .load-more {
@@ -63,14 +63,13 @@
   background: #2563eb;
 }
 
-
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,8 +86,14 @@
 }
 
 @keyframes popIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .download-btn {
@@ -123,7 +128,7 @@
 
 .search-input:focus {
   border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 .card-actions {
@@ -154,11 +159,9 @@
   box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
 }
 
-
 .preview-btn {
   display: none;
 }
-
 
 .modal-actions {
   display: flex;
@@ -211,17 +214,19 @@
   background: #5a6268;
 }
 
-
 .modal-preview-btn {
   display: none;
 }
 
-
 @media (max-width: 768px) {
+  .filters-grid,
+  .resources-grid {
+    grid-template-columns: 1fr;
+  }
   .modal-actions {
     flex-direction: column;
   }
-  
+
   .modal-download-btn,
   .modal-close-btn {
     flex: 1;
