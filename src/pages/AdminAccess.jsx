@@ -426,7 +426,7 @@ export default function AdminAccess() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    {/* <th>ID</th> */}
                     <th>Full Name</th>
                     <th>Email</th>
                     <th>Role</th>
@@ -445,7 +445,7 @@ export default function AdminAccess() {
                   ) : (
                     filteredUsers.map((user) => (
                       <tr key={user.id} className={user.id === currentUser.id ? 'current-user' : ''}>
-                        <td className="user-id">#{user.id?.toString().substring(0, 8)}</td>
+                        {/* <td className="user-id">#{user.id?.toString().substring(0, 8)}</td> */}
                         <td>
                           <div className="user-info">
                             <span className="user-name">{user.FullName}</span>

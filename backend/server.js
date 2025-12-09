@@ -1,5 +1,8 @@
 
+
+import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, existsSync } from 'fs';
@@ -8,30 +11,42 @@ import nodemailer from 'nodemailer';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Check if dist folder exists
+
+const otpStore = new Map(); 
+
+
+const OTP_EXPIRY_MINUTES = 10;
+
+
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174'], 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+}));
+
 const distExists = existsSync(join(__dirname, 'dist'));
 console.log('📁 dist exists:', distExists);
 
 app.use(express.json());
 
-// Serve static files from dist folder
 if (distExists) {
   app.use(express.static(join(__dirname, 'dist')));
   console.log('✅ Serving static files from dist/');
 }
 
 
-let transporter = null;
+let transporter = null; 
 
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
+      pass: process.env.EMAIL_PASS,
+    },
+    secure: false,
   });
-  console.log('✅ Email configured with:', process.env.EMAIL_USER);
+  
 } else {
   console.log('⚠️ Email not configured (missing EMAIL_USER or EMAIL_PASS)');
 }
@@ -42,23 +57,33 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     service: 'Fresher Hub',
     timestamp: new Date().toISOString(),
-    email: !!transporter
+    email: !!transporter,
+    otpsStored: otpStore.size
   });
 });
 
 
 app.post('/api/send-otp', async (req, res) => {
-  console.log('📧 OTP request:', req.body?.email);
+  
   
   try {
-    const { email, otp } = req.body;
-    
-    if (!email || !otp) {
+    const { email } = req.body;
+
+    if (!email) {
       return res.status(400).json({ 
         success: false,
-        error: 'Email and OTP required' 
+        error: 'Email required' 
       });
     }
+
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    
+    const expiresAt = Date.now() + (OTP_EXPIRY_MINUTES * 60 * 1000);
+    otpStore.set(email.toLowerCase(), { otp, expiresAt });
+    
+    
     
     
     if (transporter) {
@@ -94,7 +119,7 @@ app.post('/api/send-otp', async (req, res) => {
                   <div class="otp-box">
                     <div class="otp-code">${otp}</div>
                   </div>
-                  <p><strong>⏱️ This code expires in 10 minutes.</strong></p>
+                  <p><strong>⏱️ This code expires in ${OTP_EXPIRY_MINUTES} minutes.</strong></p>
                   <p>If you didn't request this, please ignore this email.</p>
                   <div class="footer">
                     <p>This is an automated email from Fresher Hub</p>
@@ -104,7 +129,7 @@ app.post('/api/send-otp', async (req, res) => {
             </body>
             </html>
           `,
-          text: `Your OTP is: ${otp}. It expires in 10 minutes.`
+          text: `Your OTP is: ${otp}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`
         };
         
         await transporter.sendMail(mailOptions);
@@ -113,7 +138,8 @@ app.post('/api/send-otp', async (req, res) => {
         return res.json({
           success: true,
           message: 'OTP sent to your email',
-          service: 'Nodemailer'
+          service: 'Email',
+          expiresIn: `${OTP_EXPIRY_MINUTES} minutes`
         });
         
       } catch (emailError) {
@@ -123,17 +149,18 @@ app.post('/api/send-otp', async (req, res) => {
     }
     
     
+    console.log('⚠️ Running in MOCK mode - OTP in response');
     res.json({
       success: true,
-      message: 'OTP generated',
+      message: 'OTP generated (mock mode)',
       otp: otp,
       service: 'Mock',
-      note: 'Email not configured - check this response for your OTP',
-      instructions: `Use this OTP on verification page: ${otp}`
+      expiresIn: `${OTP_EXPIRY_MINUTES} minutes`,
+      note: 'Email not configured - check this response for your OTP'
     });
     
   } catch (error) {
-    console.error('Server error:', error);
+    console.error('❌ Server error:', error);
     res.status(500).json({ 
       success: false,
       error: 'Internal server error',
@@ -141,6 +168,86 @@ app.post('/api/send-otp', async (req, res) => {
     });
   }
 });
+
+
+app.post('/api/verify-otp', async (req, res) => {
+  console.log('🔍 OTP verification request:', req.body?.email);
+  
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Email and OTP are required' 
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase();
+    const storedData = otpStore.get(normalizedEmail);
+
+    if (!storedData) {
+      console.log('❌ No OTP found for:', email);
+      return res.status(400).json({ 
+        success: false,
+        error: 'No OTP found. Please request a new one.' 
+      });
+    }
+
+    
+    if (Date.now() > storedData.expiresAt) {
+      console.log('❌ OTP expired for:', email);
+      otpStore.delete(normalizedEmail);
+      return res.status(400).json({ 
+        success: false,
+        error: 'OTP has expired. Please request a new one.' 
+      });
+    }
+
+    
+    if (storedData.otp !== otp.toString()) {
+      console.log('❌ Invalid OTP for:', email);
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid OTP. Please try again.' 
+      });
+    }
+
+    
+    console.log('✅ OTP verified for:', email);
+    otpStore.delete(normalizedEmail); 
+    
+    res.json({
+      success: true,
+      message: 'OTP verified successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Verification error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+});
+
+
+setInterval(() => {
+  const now = Date.now();
+  let cleaned = 0;
+  
+  for (const [email, data] of otpStore.entries()) {
+    if (now > data.expiresAt) {
+      otpStore.delete(email);
+      cleaned++;
+    }
+  }
+  
+  if (cleaned > 0) {
+    console.log(`🧹 Cleaned ${cleaned} expired OTP(s)`);
+  }
+}, 60000); 
 
 let indexHtml = null;
 if (distExists) {
@@ -155,23 +262,18 @@ if (distExists) {
   }
 }
 
-
 const handleSPA = (req, res, next) => {
-  
   if (req.path.startsWith('/api/')) {
     return next();
   }
-  
   
   if (req.path.match(/\.[a-zA-Z0-9]{2,}$/)) {
     return next();
   }
   
-  
   if (indexHtml) {
     return res.send(indexHtml);
   }
-  
   
   next();
 };
@@ -210,8 +312,6 @@ app.use((req, res) => {
     </html>
   `);
 });
-
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {

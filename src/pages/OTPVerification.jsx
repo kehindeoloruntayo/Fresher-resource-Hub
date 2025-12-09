@@ -10,84 +10,78 @@ function OTPVerification() {
   const navigate = useNavigate();
 
   const verifyOTP = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    try {
-      const email = sessionStorage.getItem("resetEmail");
-      if (!email) {
-        navigate("/forgot-password");
-        return;
-      }
-
-      // Get user data
-      const { data: user, error: userError } = await supabase
-        .from("Registered")
-        .select("*")
-        .eq("Email", email)
-        .single();
-
-      if (userError || !user) {
-        throw new Error("Session expired. Please try again.");
-      }
-
-      // Check OTP
-      if (!user.otp_code || user.otp_code !== otp) {
-        throw new Error("Invalid OTP code");
-      }
-
-      // Check expiry
-      const now = new Date();
-      const expiryDate = new Date(user.otp_expires);
-      
-      if (now > expiryDate) {
-        throw new Error("OTP has expired. Please request a new one.");
-      }
-
-      // OTP valid, navigate to reset password
-      navigate("/reset-password");
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  try {
+    const email = sessionStorage.getItem("resetEmail");
+    if (!email) {
+      navigate("/forgot-password");
+      return;
     }
-  };
 
-  const handleResendOTP = async () => {
-    try {
-      const email = sessionStorage.getItem("resetEmail");
-      if (!email) {
-        navigate("/forgot-password");
-        return;
-      }
+    
+    const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+    
+    const res = await fetch(`${backendURL}/api/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp })
+    });
 
-      // Generate new OTP
-      const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const result = await res.json();
+    
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || "Invalid OTP");
+    }
 
-      // Update in database
-      await supabase
-        .from("Registered")
-        .update({ 
-          otp_code: newOtp, 
-          otp_expires: expiresAt 
-        })
-        .eq("Email", email);
+    
+    console.log("✅ OTP verified:", result);
+    navigate("/reset-password");
+    
+  } catch (err) {
+    console.error(err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      // Send new OTP
-      await fetch("http://localhost:3001/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: newOtp }),
-      });
+const handleResendOTP = async () => {
+  try {
+    const email = sessionStorage.getItem("resetEmail");
+    if (!email) {
+      navigate("/forgot-password");
+      return;
+    }
 
+    
+    const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+    
+    const res = await fetch(`${backendURL}/api/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+
+    const result = await res.json();
+    
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || "Failed to resend OTP");
+    }
+
+    if (result.otp) {
+      alert(`New OTP: ${result.otp}`); 
+    } else {
       alert("New OTP sent to your email!");
-    } catch (err) {
-      console.error("Failed to resend OTP:", err);
-      setError("Failed to resend OTP. Please try again.");
     }
+    
+  } catch (err) {
+    console.error("Failed to resend OTP:", err);
+    setError("Failed to resend OTP. Please try again.");
+  }
+
   };
 
   return (
