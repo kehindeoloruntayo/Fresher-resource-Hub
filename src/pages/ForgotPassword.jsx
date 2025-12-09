@@ -58,18 +58,18 @@ function ForgotPassword() {
 
       
       if (result.otp) {
-        // toast.success(`Your OTP is: ${result.otp}`, {
-        //   duration: 20000,
-        //   style: {
-        //     background: "#667eea",
-        //     color: "white",
-        //     fontSize: "18px",
-        //     fontWeight: "bold",
-        //     padding: "20px 30px",
-        //     borderRadius: "10px"
-        //   },
-        //   icon: "🔐"
-        // });
+        toast.success(`Your OTP is: ${result.otp}`, {
+          duration: 20000,
+          style: {
+            background: "#667eea",
+            color: "white",
+            fontSize: "18px",
+            fontWeight: "bold",
+            padding: "20px 30px",
+            borderRadius: "10px"
+          },
+          icon: "🔐"
+        });
       } else {
         toast.success("OTP sent to your email!");
       }
@@ -111,18 +111,18 @@ function ForgotPassword() {
 
      
       if (result.otp) {
-        // toast.success(`New OTP: ${result.otp}`, {
-        //   duration: 15000,
-        //   style: {
-        //     background: "#667eea",
-        //     color: "white",
-        //     fontSize: "18px",
-        //     fontWeight: "bold",
-        //     padding: "20px 30px",
-        //     borderRadius: "10px"
-        //   },
-        //   icon: "🔐"
-        // });
+        toast.success(`New OTP: ${result.otp}`, {
+          duration: 15000,
+          style: {
+            background: "#667eea",
+            color: "white",
+            fontSize: "18px",
+            fontWeight: "bold",
+            padding: "20px 30px",
+            borderRadius: "10px"
+          },
+          icon: "🔐"
+        });
       } else {
         toast.success("A new OTP has been sent to your email!");
       }
