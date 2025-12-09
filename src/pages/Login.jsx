@@ -134,7 +134,7 @@ function Login({ setUser, setUserRole }) {
           <div className="error-message">
             {error}
             <br />
-            <small>Backend URL: {API_BASE_URL}</small>
+            
           </div>
         )}
 
