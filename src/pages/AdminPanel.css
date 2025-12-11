@@ -242,4 +242,7 @@
     overflow-x: auto;
     white-space: nowrap;
   }
+  .uploads-section {
+    overflow-x: scroll;
+  }
 }
