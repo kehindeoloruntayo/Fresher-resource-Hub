@@ -2,12 +2,16 @@ import "./pending.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import Pagination from "../components/Pagination";
 
 function Pending() {
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [pendingPage, setPendingPage] = useState(1);
+  const [approvedPage, setApprovedPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchUserUploads();
@@ -15,7 +19,6 @@ function Pending() {
 
   const fetchUserUploads = async () => {
     try {
-      
       const userData = sessionStorage.getItem("user");
       if (!userData) {
         navigate("/login");
@@ -24,12 +27,11 @@ function Pending() {
 
       const user = JSON.parse(userData);
 
-      
       const { data, error } = await supabase
-        .from('uploads')
-        .select('*')
-        .eq('uploader_email', user.Email)
-        .order('created_at', { ascending: false });
+        .from("uploads")
+        .select("*")
+        .eq("uploader_email", user.Email)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
@@ -46,37 +48,35 @@ function Pending() {
     const statusConfig = {
       pending: { class: "pending", text: "⏳ Pending" },
       approved: { class: "approved", text: "✅ Approved" },
-      rejected: { class: "rejected", text: "❌ Rejected" }
+      rejected: { class: "rejected", text: "❌ Rejected" },
     };
 
     const config = statusConfig[status] || statusConfig.pending;
     return (
-      <span className={`status-badge ${config.class}`}>
-        {config.text}
-      </span>
+      <span className={`status-badge ${config.class}`}>{config.text}</span>
     );
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const getFileIcon = (fileName) => {
-    const ext = fileName.split('.').pop().toLowerCase();
+    const ext = fileName.split(".").pop().toLowerCase();
     const icons = {
-      pdf: '📕',
-      doc: '📄',
-      docx: '📄',
-      ppt: '📊',
-      pptx: '📊',
-      txt: '📝',
-      zip: '📦'
+      pdf: "📕",
+      doc: "📄",
+      docx: "📄",
+      ppt: "📊",
+      pptx: "📊",
+      txt: "📝",
+      zip: "📦",
     };
-    return icons[ext] || '📁';
+    return icons[ext] || "📁";
   };
 
   if (loading) {
@@ -95,11 +95,17 @@ function Pending() {
     );
   }
 
-  const pendingUploads = uploads.filter(upload => upload.status === 'pending');
-  const approvedUploads = uploads.filter(upload => upload.status === 'approved');
-  const rejectedUploads = uploads.filter(upload => upload.status === 'rejected');
+  const pendingUploads = uploads.filter(
+    (upload) => upload.status === "pending"
+  );
+  const approvedUploads = uploads.filter(
+    (upload) => upload.status === "approved"
+  );
+  const rejectedUploads = uploads.filter(
+    (upload) => upload.status === "rejected"
+  );
 
-  return ( 
+  return (
     <div className="pending-container">
       <h1>My Uploads Status</h1>
       <p>Track the approval status of your uploaded documents.</p>
@@ -111,15 +117,21 @@ function Pending() {
           <div className="stat-label">Total Uploads</div>
         </div>
         <div className="stat-item">
-          <div className="stat-number pending-count">{pendingUploads.length}</div>
+          <div className="stat-number pending-count">
+            {pendingUploads.length}
+          </div>
           <div className="stat-label">Pending Review</div>
         </div>
         <div className="stat-item">
-          <div className="stat-number approved-count">{approvedUploads.length}</div>
+          <div className="stat-number approved-count">
+            {approvedUploads.length}
+          </div>
           <div className="stat-label">Approved</div>
         </div>
         <div className="stat-item">
-          <div className="stat-number rejected-count">{rejectedUploads.length}</div>
+          <div className="stat-number rejected-count">
+            {rejectedUploads.length}
+          </div>
           <div className="stat-label">Rejected</div>
         </div>
       </div>
@@ -138,31 +150,38 @@ function Pending() {
               </tr>
             </thead>
             <tbody>
-              {pendingUploads.map((upload) => (
-                <tr key={upload.id}>
-                  <td>
-                    <div className="document-info">
-                      <span className="file-icon">{getFileIcon(upload.file_name)}</span>
-                      <div>
-                        <div className="document-title">{upload.title}</div>
-                        <div className="document-description">{upload.description}</div>
+              {pendingUploads
+                .slice(
+                  (pendingPage - 1) * itemsPerPage,
+                  pendingPage * itemsPerPage
+                )
+                .map((upload) => (
+                  <tr key={upload.id}>
+                    <td>
+                      <div className="document-info">
+                        <span className="file-icon">
+                          {getFileIcon(upload.file_name)}
+                        </span>
+                        <div>
+                          <div className="document-title">{upload.title}</div>
+                          <div className="document-description">
+                            {upload.description}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>{formatDate(upload.created_at)}</td>
-                  <td>
-                    <div className="file-info">
-                      <div>{upload.file_name}</div>
-                      <div className="file-size">
-                        {(upload.file_size / 1024 / 1024).toFixed(2)} MB
+                    </td>
+                    <td>{formatDate(upload.created_at)}</td>
+                    <td>
+                      <div className="file-info">
+                        <div>{upload.file_name}</div>
+                        <div className="file-size">
+                          {(upload.file_size / 1024 / 1024).toFixed(2)} MB
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    {getStatusBadge(upload.status)}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>{getStatusBadge(upload.status)}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         ) : (
@@ -170,6 +189,11 @@ function Pending() {
             <p>No documents pending approval. 🎉</p>
           </div>
         )}
+        <Pagination
+          currentPage={pendingPage}
+          totalPages={Math.ceil(pendingUploads.length / itemsPerPage)}
+          onPageChange={setPendingPage}
+        />
       </div>
 
       {/* Approved Uploads Section */}
@@ -185,23 +209,30 @@ function Pending() {
               </tr>
             </thead>
             <tbody>
-              {approvedUploads.map((upload) => (
-                <tr key={upload.id}>
-                  <td>
-                    <div className="document-info">
-                      <span className="file-icon">{getFileIcon(upload.file_name)}</span>
-                      <div>
-                        <div className="document-title">{upload.title}</div>
-                        <div className="document-description">{upload.description}</div>
+              {approvedUploads
+                .slice(
+                  (approvedPage - 1) * itemsPerPage,
+                  approvedPage * itemsPerPage
+                )
+                .map((upload) => (
+                  <tr key={upload.id}>
+                    <td>
+                      <div className="document-info">
+                        <span className="file-icon">
+                          {getFileIcon(upload.file_name)}
+                        </span>
+                        <div>
+                          <div className="document-title">{upload.title}</div>
+                          <div className="document-description">
+                            {upload.description}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>{formatDate(upload.updated_at)}</td>
-                  <td>
-                    {getStatusBadge(upload.status)}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>{formatDate(upload.updated_at)}</td>
+                    <td>{getStatusBadge(upload.status)}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -224,21 +255,28 @@ function Pending() {
                 <tr key={upload.id}>
                   <td>
                     <div className="document-info">
-                      <span className="file-icon">{getFileIcon(upload.file_name)}</span>
+                      <span className="file-icon">
+                        {getFileIcon(upload.file_name)}
+                      </span>
                       <div>
                         <div className="document-title">{upload.title}</div>
-                        <div className="document-description">{upload.description}</div>
+                        <div className="document-description">
+                          {upload.description}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td>{formatDate(upload.updated_at)}</td>
-                  <td>
-                    {getStatusBadge(upload.status)}
-                  </td>
+                  <td>{getStatusBadge(upload.status)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <Pagination
+            currentPage={approvedPage}
+            totalPages={Math.ceil(approvedUploads.length / itemsPerPage)}
+            onPageChange={setApprovedPage}
+          />
         </div>
       )}
 
@@ -248,7 +286,7 @@ function Pending() {
           <div className="no-uploads-icon">📭</div>
           <h3>No uploads yet</h3>
           <p>You haven't uploaded any documents yet.</p>
-          <button 
+          <button
             onClick={() => navigate("/upload")}
             className="upload-cta-btn"
           >

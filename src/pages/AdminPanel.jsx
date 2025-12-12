@@ -2,6 +2,7 @@ import "./AdminPanel.css";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import Pagination from "../components/Pagination";
 
 function AdminPanel() {
   const [adminData, setAdminData] = useState(null);
@@ -9,6 +10,10 @@ function AdminPanel() {
   const [uploads, setUploads] = useState([]);
   const [refresh, setRefresh] = useState(0);
   const navigate = useNavigate();
+  const [pendingPage, setPendingPage] = useState(1);
+  const [approvedPage, setApprovedPage] = useState(1);
+  const [rejectedPage, setRejectedPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchAdminData();
@@ -16,21 +21,21 @@ function AdminPanel() {
   }, [refresh]);
 
   const fetchAdminData = async () => {
-  try {
-    const userData = sessionStorage.getItem("user"); 
-    
-    if (!userData) {
-      navigate("/login");
-      return;
-    }
+    try {
+      const userData = sessionStorage.getItem("user");
 
-    const user = JSON.parse(userData);
-    
-    const { data, error } = await supabase
-      .from("Registered")
-      .select("FullName, Email, role")
-      .eq("Email", user.Email)
-      .single();
+      if (!userData) {
+        navigate("/login");
+        return;
+      }
+
+      const user = JSON.parse(userData);
+
+      const { data, error } = await supabase
+        .from("Registered")
+        .select("FullName, Email, role")
+        .eq("Email", user.Email)
+        .single();
 
       if (error) throw error;
 
@@ -50,9 +55,9 @@ function AdminPanel() {
   const fetchUploads = async () => {
     try {
       const { data, error } = await supabase
-        .from('uploads')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("uploads")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setUploads(data || []);
@@ -61,19 +66,19 @@ function AdminPanel() {
     }
   };
 
-  const handleApprove = async (uploadId) => { 
+  const handleApprove = async (uploadId) => {
     try {
       const { error } = await supabase
-        .from('uploads')
-        .update({ 
-          status: 'approved',
-          updated_at: new Date().toISOString()
+        .from("uploads")
+        .update({
+          status: "approved",
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', uploadId);
+        .eq("id", uploadId);
 
       if (error) throw error;
-      
-      setRefresh(prev => prev + 1);
+
+      setRefresh((prev) => prev + 1);
       alert("Document approved successfully!");
     } catch (error) {
       console.error("Error approving document:", error);
@@ -82,19 +87,23 @@ function AdminPanel() {
   };
 
   const handleReject = async (uploadId) => {
-    if (window.confirm("Are you sure you want to reject this document? This action cannot be undone.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to reject this document? This action cannot be undone."
+      )
+    ) {
       try {
         const { error } = await supabase
-          .from('uploads')
-          .update({ 
-            status: 'rejected',
-            updated_at: new Date().toISOString()
+          .from("uploads")
+          .update({
+            status: "rejected",
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', uploadId);
+          .eq("id", uploadId);
 
         if (error) throw error;
-        
-        setRefresh(prev => prev + 1);
+
+        setRefresh((prev) => prev + 1);
         alert("Document rejected successfully!");
       } catch (error) {
         console.error("Error rejecting document:", error);
@@ -104,30 +113,35 @@ function AdminPanel() {
   };
 
   const handleDelete = async (uploadId, fileName) => {
-    if (window.confirm("Are you sure you want to delete this document? This will remove it from the database and storage permanently.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this document? This will remove it from the database and storage permanently."
+      )
+    ) {
       try {
-       
-        const storageFileName = fileName.includes('/') ? fileName.split('/').pop() : fileName;
-        
-        
+        const storageFileName = fileName.includes("/")
+          ? fileName.split("/").pop()
+          : fileName;
+
         const { error: storageError } = await supabase.storage
-          .from('documents')
+          .from("documents")
           .remove([storageFileName]);
 
         if (storageError) {
-          console.warn("Storage delete error (file might not exist):", storageError);
-         
+          console.warn(
+            "Storage delete error (file might not exist):",
+            storageError
+          );
         }
 
-       
         const { error: dbError } = await supabase
-          .from('uploads')
+          .from("uploads")
           .delete()
-          .eq('id', uploadId);
+          .eq("id", uploadId);
 
         if (dbError) throw dbError;
-        
-        setRefresh(prev => prev + 1);
+
+        setRefresh((prev) => prev + 1);
         alert("Document deleted successfully!");
       } catch (error) {
         console.error("Error deleting document:", error);
@@ -137,14 +151,20 @@ function AdminPanel() {
   };
 
   const handleLogout = () => {
-  sessionStorage.removeItem("user");
-  sessionStorage.removeItem("admin");
-  navigate("/login");
-};
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("admin");
+    navigate("/login");
+  };
 
-  const pendingUploads = uploads.filter(upload => upload.status === 'pending');
-  const approvedUploads = uploads.filter(upload => upload.status === 'approved');
-  const rejectedUploads = uploads.filter(upload => upload.status === 'rejected');
+  const pendingUploads = uploads.filter(
+    (upload) => upload.status === "pending"
+  );
+  const approvedUploads = uploads.filter(
+    (upload) => upload.status === "approved"
+  );
+  const rejectedUploads = uploads.filter(
+    (upload) => upload.status === "rejected"
+  );
 
   if (loading) {
     return (
@@ -170,7 +190,9 @@ function AdminPanel() {
           <p>Review and manage uploaded documents</p>
         </div>
         <div className="admin-info">
-          <p>Welcome back, <strong>{adminData.FullName}</strong>!</p>
+          <p>
+            Welcome back, <strong>{adminData.FullName}</strong>!
+          </p>
           <button onClick={handleLogout} className="logout-btn">
             Logout
           </button>
@@ -213,46 +235,57 @@ function AdminPanel() {
               </tr>
             </thead>
             <tbody>
-              {pendingUploads.map((upload) => (
-                <tr key={upload.id}>
-                  <td><strong>{upload.title}</strong></td>
-                  <td>{upload.description}</td>
-                  <td>{upload.uploader_name}</td>
-                  <td>
-                    <a 
-                      href={upload.file_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="file-link"
-                    >
-                      📎 {upload.file_name}
-                    </a>
-                    <br />
-                    <small>{(upload.file_size / 1024 / 1024).toFixed(2)} MB</small>
-                  </td>
-                  <td>{new Date(upload.created_at).toLocaleDateString()}</td>
-                  <td className="actions">
-                    <button 
-                      className="approve-btn"
-                      onClick={() => handleApprove(upload.id)}
-                    >
-                      ✅ Approve
-                    </button>
-                    <button 
-                      className="reject-btn"
-                      onClick={() => handleReject(upload.id)}
-                    >
-                      ❌ Reject
-                    </button>
-                    <button 
-                      className="delete-btn"
-                      onClick={() => handleDelete(upload.id, upload.file_name)}
-                    >
-                      🗑️ Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {pendingUploads
+                .slice(
+                  (pendingPage - 1) * itemsPerPage,
+                  pendingPage * itemsPerPage
+                )
+                .map((upload) => (
+                  <tr key={upload.id}>
+                    <td>
+                      <strong>{upload.title}</strong>
+                    </td>
+                    <td>{upload.description}</td>
+                    <td>{upload.uploader_name}</td>
+                    <td>
+                      <a
+                        href={upload.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="file-link"
+                      >
+                        📎 {upload.file_name}
+                      </a>
+                      <br />
+                      <small>
+                        {(upload.file_size / 1024 / 1024).toFixed(2)} MB
+                      </small>
+                    </td>
+                    <td>{new Date(upload.created_at).toLocaleDateString()}</td>
+                    <td className="actions">
+                      <button
+                        className="approve-btn"
+                        onClick={() => handleApprove(upload.id)}
+                      >
+                        ✅ Approve
+                      </button>
+                      <button
+                        className="reject-btn"
+                        onClick={() => handleReject(upload.id)}
+                      >
+                        ❌ Reject
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() =>
+                          handleDelete(upload.id, upload.file_name)
+                        }
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         ) : (
@@ -260,9 +293,13 @@ function AdminPanel() {
             <p>No documents pending review. 🎉</p>
           </div>
         )}
+        <Pagination
+          currentPage={pendingPage}
+          totalPages={Math.ceil(pendingUploads.length / itemsPerPage)}
+          onPageChange={setPendingPage}
+        />
       </div>
 
-     
       <div className="uploads-section">
         <h2>Approved Documents ({approvedUploads.length})</h2>
         {approvedUploads.length > 0 ? (
@@ -277,31 +314,40 @@ function AdminPanel() {
               </tr>
             </thead>
             <tbody>
-              {approvedUploads.map((upload) => (
-                <tr key={upload.id}>
-                  <td><strong>{upload.title}</strong></td>
-                  <td>{upload.uploader_name}</td>
-                  <td>
-                    <a 
-                      href={upload.file_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="file-link"
-                    >
-                      📎 {upload.file_name}
-                    </a>
-                  </td>
-                  <td>{new Date(upload.updated_at).toLocaleDateString()}</td>
-                  <td className="actions">
-                    <button 
-                      className="delete-btn"
-                      onClick={() => handleDelete(upload.id, upload.file_name)}
-                    >
-                      🗑️ Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {approvedUploads
+                .slice(
+                  (approvedPage - 1) * itemsPerPage,
+                  approvedPage * itemsPerPage
+                )
+                .map((upload) => (
+                  <tr key={upload.id}>
+                    <td>
+                      <strong>{upload.title}</strong>
+                    </td>
+                    <td>{upload.uploader_name}</td>
+                    <td>
+                      <a
+                        href={upload.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="file-link"
+                      >
+                        📎 {upload.file_name}
+                      </a>
+                    </td>
+                    <td>{new Date(upload.updated_at).toLocaleDateString()}</td>
+                    <td className="actions">
+                      <button
+                        className="delete-btn"
+                        onClick={() =>
+                          handleDelete(upload.id, upload.file_name)
+                        }
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         ) : (
@@ -309,9 +355,13 @@ function AdminPanel() {
             <p>No approved documents yet.</p>
           </div>
         )}
+        <Pagination
+          currentPage={approvedPage}
+          totalPages={Math.ceil(approvedUploads.length / itemsPerPage)}
+          onPageChange={setApprovedPage}
+        />
       </div>
 
-      
       <div className="uploads-section">
         <h2>Rejected Documents ({rejectedUploads.length})</h2>
         {rejectedUploads.length > 0 ? (
@@ -326,31 +376,40 @@ function AdminPanel() {
               </tr>
             </thead>
             <tbody>
-              {rejectedUploads.map((upload) => (
-                <tr key={upload.id}>
-                  <td><strong>{upload.title}</strong></td>
-                  <td>{upload.uploader_name}</td>
-                  <td>
-                    <a 
-                      href={upload.file_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="file-link"
-                    >
-                      📎 {upload.file_name}
-                    </a>
-                  </td>
-                  <td>{new Date(upload.updated_at).toLocaleDateString()}</td>
-                  <td className="actions">
-                    <button 
-                      className="delete-btn"
-                      onClick={() => handleDelete(upload.id, upload.file_name)}
-                    >
-                      🗑️ Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {rejectedUploads
+                .slice(
+                  (rejectedPage - 1) * itemsPerPage,
+                  rejectedPage * itemsPerPage
+                )
+                .map((upload) => (
+                  <tr key={upload.id}>
+                    <td>
+                      <strong>{upload.title}</strong>
+                    </td>
+                    <td>{upload.uploader_name}</td>
+                    <td>
+                      <a
+                        href={upload.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="file-link"
+                      >
+                        📎 {upload.file_name}
+                      </a>
+                    </td>
+                    <td>{new Date(upload.updated_at).toLocaleDateString()}</td>
+                    <td className="actions">
+                      <button
+                        className="delete-btn"
+                        onClick={() =>
+                          handleDelete(upload.id, upload.file_name)
+                        }
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         ) : (
@@ -359,6 +418,11 @@ function AdminPanel() {
           </div>
         )}
       </div>
+      <Pagination
+        currentPage={rejectedPage}
+        totalPages={Math.ceil(rejectedUploads.length / itemsPerPage)}
+        onPageChange={setRejectedPage}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import Pagination from "../components/Pagination";
 import "./Resources.css";
 
 function Resources() {
@@ -10,7 +11,8 @@ function Resources() {
   const [category, setCategory] = useState("All");
   const [fileType, setFileType] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [visibleCount, setVisibleCount] = useState(8);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
 
@@ -73,35 +75,48 @@ function Resources() {
     return typeMap[ext] || ext.toUpperCase();
   };
 
-const filteredAndSortedResources = useMemo(() => {
-  let result = [...resources];
+  const filteredAndSortedResources = useMemo(() => {
+    let result = [...resources];
 
-result = result.filter(resource => {
-    const categoryMatch = category === "All" || resource.category === category;
-    const typeMatch = fileType === "All" || getFileTypeDisplay(resource.file_name) === fileType;
-    const searchMatch = !searchTerm ||
-      resource.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resource.uploader_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resource.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    result = result.filter((resource) => {
+      const categoryMatch =
+        category === "All" || resource.category === category;
+      const typeMatch =
+        fileType === "All" ||
+        getFileTypeDisplay(resource.file_name) === fileType;
+      const searchMatch =
+        !searchTerm ||
+        resource.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        resource.uploader_name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        resource.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return categoryMatch && typeMatch && searchMatch;
-  });
+      return categoryMatch && typeMatch && searchMatch;
+    });
 
-  // Apply sorting
-  result.sort((a, b) => {
-    switch (sortBy) {
-      case "newest":     return new Date(b.created_at) - new Date(a.created_at);
-      case "oldest":     return new Date(a.created_at) - new Date(b.created_at);
-      case "name-asc":   return a.title.localeCompare(b.title);
-      case "name-desc":  return b.title.localeCompare(a.title);
-      case "size-desc":  return b.file_size - a.file_size;
-      case "size-asc":   return a.file_size - b.file_size;
-      default:           return 0;
-    }
-  });
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.created_at) - new Date(a.created_at);
+        case "oldest":
+          return new Date(a.created_at) - new Date(b.created_at);
+        case "name-asc":
+          return a.title.localeCompare(b.title);
+        case "name-desc":
+          return b.title.localeCompare(a.title);
+        case "size-desc":
+          return b.file_size - a.file_size;
+        case "size-asc":
+          return a.file_size - b.file_size;
+        default:
+          return 0;
+      }
+    });
 
-  return result;
-}, [resources, category, fileType, searchTerm, sortBy]);
+    return result;
+  }, [resources, category, fileType, searchTerm, sortBy]);
 
   const categories = useMemo(() => {
     const cats = ["All"];
@@ -124,7 +139,10 @@ result = result.filter(resource => {
     return types;
   }, [resources]);
 
-  const displayed = filteredAndSortedResources.slice(0, visibleCount);
+  const displayed = filteredAndSortedResources.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleDownload = (resource) => {
     const link = document.createElement("a");
@@ -405,17 +423,12 @@ result = result.filter(resource => {
             ))}
           </div>
 
-          {/* --- Load More Button --- */}
-          {visibleCount < filteredAndSortedResources.length && (
-            <div className="load-more-container">
-              <button
-                className="load-more-btn"
-                onClick={() => setVisibleCount((prev) => prev + 8)}
-              >
-                Load More ({filteredAndSortedResources.length - visibleCount} more)
-              </button>
-            </div>
-          )}
+          {/* ← ADD THIS PAGINATION COMPONENT HERE */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredAndSortedResources.length / itemsPerPage)}
+            onPageChange={setCurrentPage}
+          />
         </>
       ) : (
         /* --- No Results --- */
