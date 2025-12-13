@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Pagination from "../components/Pagination";
+import DarkModeToggle from "../components/DarkModeToggle";
 
 function Pending() {
   const [uploads, setUploads] = useState([]);
@@ -107,6 +108,7 @@ function Pending() {
 
   return (
     <div className="pending-container">
+      <DarkModeToggle />
       <h1>My Uploads Status</h1>
       <p>Track the approval status of your uploaded documents.</p>
 

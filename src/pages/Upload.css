@@ -618,3 +618,176 @@
     max-width: 100%;
   }
 }
+
+[data-theme="dark"] .upload-container {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .upload-container h1 {
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .upload-container p {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .upload-box,
+[data-theme="dark"] .upload-disabled-warning,
+[data-theme="dark"] .upload-disabled-alternative,
+[data-theme="dark"] .error-message,
+[data-theme="dark"] .message,
+[data-theme="dark"] .file-info,
+[data-theme="dark"] .alternative-actions {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .form-group label {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group textarea,
+[data-theme="dark"] .form-group input[type="file"] {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .form-group textarea::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group textarea:focus,
+[data-theme="dark"] .form-group input[type="file"]:focus {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.3) !important;
+}
+
+[data-theme="dark"] .form-group input[type="file"] {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .form-group input[type="file"]:hover {
+  background: #475569 !important;
+  border-color: #818cf8 !important;
+}
+
+[data-theme="dark"] .file-info p {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .file-info strong {
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .file-hint {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .upload-btn {
+  background: #48bb78 !important;
+}
+
+[data-theme="dark"] .upload-btn:hover:not(:disabled) {
+  background: #38a169 !important;
+  box-shadow: 0 10px 25px rgba(72, 187, 120, 0.5) !important;
+}
+
+[data-theme="dark"] .upload-btn:disabled {
+  background: #475569 !important;
+}
+
+/* Messages */
+[data-theme="dark"] .message.success {
+  background: #065f46 !important;
+  color: #86efac !important;
+  border-color: #10b981 !important;
+}
+
+[data-theme="dark"] .message.error {
+  background: #991b1b !important;
+  color: #fca5a5 !important;
+  border-color: #ef4444 !important;
+}
+
+[data-theme="dark"] .redirect-notice {
+  color: #d4d4d8;
+}
+
+/* Disabled warning */
+[data-theme="dark"] .upload-disabled-warning h2 {
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .upload-disabled-warning p,
+[data-theme="dark"] .contact-admin {
+  color: #fecaca;
+}
+
+[data-theme="dark"] .contact-admin {
+  background: #7f1d1d;
+}
+
+/* Alternative actions */
+[data-theme="dark"] .alternative-actions h3 {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .alternative-actions ul li {
+  color: #cbd5e1;
+  border-bottom-color: #475569;
+}
+
+/* Badges */
+[data-theme="dark"] .role-badge.admin {
+  background: #6366f1;
+  color: white;
+}
+
+[data-theme="dark"] .role-badge.user {
+  background: #475569;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .upload-status.enabled {
+  background: #065f46;
+  color: #86efac;
+}
+
+[data-theme="dark"] .upload-status.disabled {
+  background: #991b1b;
+  color: #fca5a5;
+}
+
+/* Buttons */
+[data-theme="dark"] .dashboard-btn,
+[data-theme="dark"] .login-btn {
+  background: #3498db;
+}
+
+[data-theme="dark"] .dashboard-btn:hover,
+[data-theme="dark"] .login-btn:hover {
+  background: #2980b9;
+}
+
+/* User info footer */
+[data-theme="dark"] .user-info-footer {
+  color: #94a3b8;
+  border-top-color: #475569;
+}
+
+/* Loading spinner */
+[data-theme="dark"] .loading-spinner {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .spinner {
+  border-color: #334155;
+  border-top-color: #818cf8;
+}

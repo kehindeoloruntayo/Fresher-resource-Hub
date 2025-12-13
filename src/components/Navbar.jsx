@@ -35,7 +35,6 @@ function Navbar() {
         <li><Link to="/upload" onClick={closeMenu}>Upload</Link></li>
         <li><Link to="/login" onClick={closeMenu}>Login</Link></li>
         <li><Link to="/register" onClick={closeMenu}>Register</Link></li>
-
       </ul>
     </nav>
   );

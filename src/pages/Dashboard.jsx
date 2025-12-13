@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 import { supabase } from "../lib/supabase";
+import DarkModeToggle from "../components/DarkModeToggle";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -107,6 +108,7 @@ const fetchUserData = async () => {
 
   return (
     <div className="dashboard-container">
+      <DarkModeToggle /> 
       <h1>Welcome to Your Dashboard</h1>
       <p><strong>{userData.FullName}</strong>!</p>
       <p className="subtitle">Monitor your activities and manage your resources efficiently.</p>

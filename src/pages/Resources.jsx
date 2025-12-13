@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Pagination from "../components/Pagination";
 import "./Resources.css";
+import DarkModeToggle from "../components/DarkModeToggle";
 
 function Resources() {
   const navigate = useNavigate();
@@ -188,6 +189,7 @@ function Resources() {
 
   return (
     <div className="resources-container">
+      <DarkModeToggle /> 
       {/* --- Header and Filter Section --- */}
       <div className="filter-section">
         <h1 className="page-title">📚 Available Resources</h1>

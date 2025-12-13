@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import Pagination from "../components/Pagination";
+import DarkModeToggle from "../components/DarkModeToggle";
 
 function AdminPanel() {
   const [adminData, setAdminData] = useState(null);
@@ -184,6 +185,7 @@ function AdminPanel() {
 
   return (
     <div className="admin-container">
+      <DarkModeToggle />
       <div className="admin-header">
         <div>
           <h1>Admin Panel</h1>

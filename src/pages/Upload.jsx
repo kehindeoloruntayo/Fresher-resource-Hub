@@ -1,9 +1,8 @@
-
-
 import "./Upload.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import DarkModeToggle from "../components/DarkModeToggle";
 
 function Upload() {
   const [formData, setFormData] = useState({
@@ -331,6 +330,7 @@ function Upload() {
 
   return (
     <div className="upload-container">
+      <DarkModeToggle />
       <h1>Upload Your Documents</h1>
       
       {/* Upload disabled warning */}

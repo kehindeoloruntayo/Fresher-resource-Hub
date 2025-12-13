@@ -461,3 +461,140 @@
     margin: 1rem;
   }
 }
+
+/* Dark mode styles */
+[data-theme="dark"] .resources-container {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .filter-section {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .search-input,
+[data-theme="dark"] .filter-select {
+  background: #1e293b;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .search-input::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .clear-search {
+  background: #475569;
+  color: #fecaca;
+}
+
+[data-theme="dark"] .filter-badge {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .filter-badge button {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .clear-all-filters {
+  color: #c4b5fd;
+  border-color: #818cf8;
+}
+
+[data-theme="dark"] .clear-all-filters:hover {
+  background: #6366f1;
+  color: white;
+}
+
+[data-theme="dark"] .results-count,
+[data-theme="dark"] .page-subtitle,
+[data-theme="dark"] .no-results p,
+[data-theme="dark"] .meta-label,
+[data-theme="dark"] .card-description {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .resource-card {
+  background: #1e293b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .card-header {
+  background: linear-gradient(135deg, #1e3a8a, #312e81);
+  border-bottom-color: #475569;
+}
+
+[data-theme="dark"] .card-title {
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .meta-value {
+  color: #a5b4fc;
+}
+
+[data-theme="dark"] .download-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+[data-theme="dark"] .download-btn:hover {
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.6);
+}
+
+[data-theme="dark"] .upload-cta-btn {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+}
+
+[data-theme="dark"] .upload-cta-btn:hover {
+  box-shadow: 0 15px 35px rgba(139, 92, 246, 0.6);
+}
+
+/* Status badges in dark mode */
+[data-theme="dark"] .status-approved {
+  background: #065f46;
+  color: #86efac;
+}
+
+[data-theme="dark"] .status-pending {
+  background: #92400e;
+  color: #fde68a;
+}
+
+[data-theme="dark"] .status-rejected {
+  background: #991b1b;
+  color: #fca5a5;
+}
+
+/* Modal in dark mode */
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+[data-theme="dark"] .modal-content {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-actions {
+  border-color: #475569;
+}
+
+[data-theme="dark"] .modal-close {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .modal-download-btn {
+  background: #10b981;
+}
+
+[data-theme="dark"] .modal-close-btn {
+  background: #475569;
+  color: #e2e8f0;
+}
+
+/* No results section */
+[data-theme="dark"] .no-results {
+  color: #cbd5e1;
+}

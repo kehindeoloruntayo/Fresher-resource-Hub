@@ -246,3 +246,18 @@
     overflow-x: scroll;
   }
 }
+
+/* Dark Mode Styles */
+[data-theme="dark"] .no-documents {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-radius: 12px;
+  padding: 3rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .no-documents p {
+  color: #cbd5e1 !important;
+  font-size: 1.1rem;
+}
