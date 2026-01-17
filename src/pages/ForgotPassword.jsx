@@ -140,7 +140,7 @@ function ForgotPassword() {
           <h2>✓ OTP Generated!</h2>
           <p>A 6-digit OTP has been generated for:</p>
           <p className="user-email">{email}</p>
-          <p>Check your email or the toast notification for the OTP code.</p>
+          <p>Check your email or Spam notification for the OTP code.</p>
           <div className="button-group">
             <Link to="/verify-otp" className="forgot-btn">
               Continue to Verify OTP
