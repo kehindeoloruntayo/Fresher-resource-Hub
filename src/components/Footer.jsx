@@ -5,11 +5,11 @@ function Footer() {
     <footer className="footer-container">
       <div className="footer-content">
         <div className="footer-section about">
-          <h3>🎓 Fresher Resource Hub</h3>
+          <h3>🎓 Resource Hub</h3>
           <p>
             A collaborative space for students to share lecture slides, past
             questions, and academic resources — bridging knowledge between
-            seniors and freshers.
+            seniors and freshmen.
           </p>
         </div>
 
@@ -26,13 +26,13 @@ function Footer() {
 
         <div className="footer-section contact">
           <h4>Contact</h4>
-          <p>Email: support@fresherhub.edu.ng</p>
+          <p>Email: support@resourcehub.edu.ng</p>
           <p>Phone: +234 704 374 1067</p>
         </div>
       </div>
 
       <div className="footer-bottom">
-        <p>© {new Date().getFullYear()} Fresher Resource Hub. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Resource Hub. All rights reserved.</p>
       </div>
     </footer>
   );

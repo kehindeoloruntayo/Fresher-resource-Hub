@@ -57,6 +57,42 @@
   min-height: 100px;
 }
 
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: white;
+  color: #2d3748;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Hover & focus states for selects - match inputs */
+.form-group select:hover {
+  border-color: #cbd5e1;
+  background-color: #f9fafb;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background-color: white;
+}
+
+/* Optional: smaller text when nothing is selected (placeholder-like) */
+.form-group select option[value=""] {
+  color: #9ca3af;
+  font-style: italic;
+}
+
 .upload-btn {
   width: 100%;
   background-color: #2563eb;
@@ -72,10 +108,6 @@
 .upload-btn:hover {
   background-color: #1e40af;
 }
-
-
-
-
 
 .loading-state {
   text-align: center;
@@ -96,7 +128,6 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-
 
 .upload-disabled-message {
   text-align: center;
@@ -197,7 +228,6 @@
   color: #0f766e;
 }
 
-
 .upload-btn.admin-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -214,7 +244,6 @@
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
-
 
 .upload-container {
   padding: 30px 20px;
@@ -262,14 +291,12 @@
   font-style: italic;
 }
 
-
 .upload-box {
   background: white;
   border-radius: 12px;
   padding: 30px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
-
 
 .form-group {
   margin-bottom: 25px;
@@ -414,7 +441,6 @@
   }
 }
 
-
 .loading-spinner {
   display: flex;
   flex-direction: column;
@@ -467,7 +493,6 @@
   margin-top: 10px;
 }
 
-
 .upload-disabled-alternative {
   background-color: #f9f9f9;
   border: 2px dashed #ddd;
@@ -515,7 +540,6 @@
 .dashboard-btn:hover {
   background-color: #2980b9;
 }
-
 
 .user-info-footer {
   margin-top: 30px;
@@ -790,4 +814,26 @@
 [data-theme="dark"] .spinner {
   border-color: #334155;
   border-top-color: #818cf8;
+}
+
+/* Dark mode adjustments for selects */
+[data-theme="dark"] .form-group select {
+  background-color: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+}
+
+[data-theme="dark"] .form-group select:hover {
+  background-color: #475569;
+  border-color: #64748b;
+}
+
+[data-theme="dark"] .form-group select:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+}
+
+[data-theme="dark"] .form-group select option[value=""] {
+  color: #94a3b8;
 }

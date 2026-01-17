@@ -7,7 +7,9 @@ import DarkModeToggle from "../components/DarkModeToggle";
 function Upload() {
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
+    courseCode: "",
+    level: "",
+    department: "",
     file: null
   });
   const [uploading, setUploading] = useState(false);
@@ -18,6 +20,36 @@ function Upload() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Dropdown options
+  const levels = [
+    "100 Level",
+    "200 Level",
+    "300 Level",
+    "400 Level",
+    "500 Level",
+    "600 Level"
+  ];
+
+  const departments = [
+    "Accounting",
+    "Biochemistry",
+    "Business Administration",
+    "Computer Science",
+    "Cyber Security",
+    "Economics",
+    "English & Literary Studies",
+    "Law",
+    "Mass Communication",
+    "Medical laboratory Science",
+    "Microbiology",
+    "Nursing Science",
+    "Political Science",
+    "Psychology",
+    "Public Health",
+    "Sociology",
+    "Software Engineering",
+    "Other"
+  ];
   
   useEffect(() => {
     checkUserPermissions();
@@ -236,7 +268,8 @@ function Upload() {
       
       const uploadData = {
         title: formData.title,
-        description: formData.description,
+        course_code: formData.courseCode,
+        department: formData.department,
         file_name: formData.file.name,
         file_url: urlData.publicUrl,
         file_size: formData.file.size,
@@ -280,7 +313,9 @@ function Upload() {
       
       setFormData({
         title: "",
-        description: "",
+        courseCode: "",
+        level: "",
+        department: "",
         file: null
       });
       
@@ -360,7 +395,7 @@ function Upload() {
         </div>
       )}
       
-      <p>Share slides or question papers with the Fresher Hub community.</p>
+      <p>Share slides or question papers with the Resource Hub community.</p>
 
       {message && (
         <div className={`message ${message.includes("✅") ? "success" : "error"}`}>
@@ -397,17 +432,49 @@ function Upload() {
             </div>
 
             <div className="form-group">
-              <label>Description *</label>
-              <textarea 
-                name="description"
-                value={formData.description}
+              <label>Course Code *</label>
+              <input
+                type="text"
+                name="courseCode"
+                value={formData.courseCode}
                 onChange={handleInputChange}
-                placeholder="Short description of your document" 
-                required 
-                maxLength="1000"
-                rows="4"
+                placeholder="e.g. CSC 301, PHY 204, ACC 411"
+                required
+                maxLength="20"
                 disabled={uploading}
               />
+            </div>
+
+            <div className="form-group">
+              <label>Level *</label>
+              <select
+                name="level"
+                value={formData.level}
+                onChange={handleInputChange}
+                required
+                disabled={uploading}
+              >
+                <option value="">Select level</option>
+                {levels.map(lvl => (
+                  <option key={lvl} value={lvl}>{lvl}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Department *</label>
+              <select
+                name="department"
+                value={formData.department}
+                onChange={handleInputChange}
+                required
+                disabled={uploading}
+              >
+                <option value="">Select department</option>
+                {departments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">

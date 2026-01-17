@@ -1,6 +1,6 @@
-# _Fresher resource Hub_
+# _Resource Hub_
 
-### _Fresher Hub is a modern file-upload web platform built with React, Node.js, Webpack, and Supabase. It allows users to upload files, manage their dashboards, and recover forgotten passwords. Admins get an advanced control panel to manage users, assign admin roles, and restrict upload permissions._
+### _Resource Hub is a modern file-upload web platform built with React, Node.js, Webpack, and Supabase. It allows users to upload files, manage their dashboards, and recover forgotten passwords. Admins get an advanced control panel to manage users, assign admin roles, and restrict upload permissions._
 
 # Technology Stack
 * [![Git][Git.com]][Git-url]
@@ -79,7 +79,7 @@
 
 © 2025 kehindeoloruntayo. All rights reserved.
 
-Fresher resource Hub is **not open source**.  
+Resource Hub is **not open source**.  
 You may not copy, modify, distribute, or use this code (in whole or in part) without explicit written permission from the author.
 
 For inquiries: kehindeoloruntayo1@gmail.com

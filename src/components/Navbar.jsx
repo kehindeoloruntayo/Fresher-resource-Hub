@@ -13,7 +13,7 @@ function Navbar() {
       {/* Logo */}
       <div className="nav-logo">
         <Link to="/" onClick={closeMenu}>
-          🎓 Fresher Hub
+          🎓 Resource Hub
         </Link>
       </div>
 

@@ -35,7 +35,7 @@ function NavbarUser() {
   return (
     <nav className="nav-container">
       <div className="nav-logo">
-        <Link to="/dashboard" onClick={closeMenu}>🎓 Fresher Hub</Link>
+        <Link to="/dashboard" onClick={closeMenu}>🎓 Resource Hub</Link>
       </div>
 
       <button
