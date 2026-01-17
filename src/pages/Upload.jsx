@@ -1,3 +1,6 @@
+
+
+
 import "./Upload.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -58,7 +61,6 @@ function Upload() {
   const checkUserPermissions = async () => {
     setLoading(true);
     try {
-     
       const storedUser = sessionStorage.getItem("user");
       
       if (!storedUser) {
@@ -68,9 +70,7 @@ function Upload() {
       }
 
       const user = JSON.parse(storedUser);
-     
       
-     
       const { data: dbUserData, error: userError } = await supabase
         .from('Registered')
         .select('*')
@@ -80,7 +80,6 @@ function Upload() {
       if (userError) {
         console.error("Error fetching user data:", userError);
         
-       
         const { error: insertError } = await supabase
           .from('Registered')
           .insert([
@@ -94,7 +93,6 @@ function Upload() {
           ]);
 
         if (!insertError) {
-         
           const { data: newUserData } = await supabase
             .from('Registered')
             .select('*')
@@ -133,7 +131,6 @@ function Upload() {
     const file = e.target.files[0];
     
     if (file) {
-     
       if (uploadDisabled) {
         setMessage("❌ Your upload privileges have been disabled by an administrator.");
         e.target.value = "";
@@ -144,7 +141,6 @@ function Upload() {
         return;
       }
 
-     
       const maxSize = 50 * 1024 * 1024;
       if (file.size > maxSize) {
         setMessage("❌ File size too large. Maximum size is 50MB.");
@@ -156,7 +152,6 @@ function Upload() {
         return;
       }
 
-      
       const allowedTypes = ['.pdf', '.ppt', '.pptx', '.doc', '.docx', '.txt', '.zip'];
       const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
       if (!allowedTypes.includes(fileExtension)) {
@@ -175,7 +170,6 @@ function Upload() {
       file: file
     }));
     
-   
     if (file && message.includes("❌")) {
       setMessage("");
     }
@@ -184,7 +178,6 @@ function Upload() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-   
     if (uploadDisabled) {
       setMessage("❌ Your upload privileges have been disabled by an administrator.");
       return;
@@ -195,7 +188,6 @@ function Upload() {
       return;
     }
 
-   
     const maxSize = 50 * 1024 * 1024;
     if (formData.file.size > maxSize) {
       setMessage("❌ File size too large. Maximum size is 50MB.");
@@ -206,7 +198,6 @@ function Upload() {
     setMessage("");
 
     try {
-      
       const storedUser = sessionStorage.getItem("user");
       
       if (!storedUser) {
@@ -216,7 +207,6 @@ function Upload() {
 
       const user = JSON.parse(storedUser);
 
-     
       const { data: freshUserData, error: userError } = await supabase
         .from('Registered')
         .select('*')
@@ -227,7 +217,6 @@ function Upload() {
         throw new Error("User data not found");
       }
 
-      
       if (freshUserData.upload_disabled) {
         setUploadDisabled(true);
         throw new Error("Your upload privileges have been disabled by an administrator.");
@@ -249,7 +238,6 @@ function Upload() {
       if (uploadError) {
         console.error("Storage error details:", uploadError);
         
-       
         if (uploadError.message.includes('size') || uploadError.message.includes('large')) {
           throw new Error("File is too large. Maximum size is 50MB.");
         }
@@ -265,10 +253,11 @@ function Upload() {
 
       const status = isUserAdmin ? 'approved' : 'pending';
 
-      
+      // ✅ FIXED: Now includes the 'level' field
       const uploadData = {
         title: formData.title,
         course_code: formData.courseCode,
+        level: formData.level,  // ✅ ADDED: This was missing!
         department: formData.department,
         file_name: formData.file.name,
         file_url: urlData.publicUrl,
@@ -280,7 +269,7 @@ function Upload() {
         created_at: new Date().toISOString()
       };
 
-     
+      // Remove undefined/null values
       Object.keys(uploadData).forEach(key => {
         if (uploadData[key] === undefined || uploadData[key] === null) {
           delete uploadData[key];
@@ -325,7 +314,6 @@ function Upload() {
       console.error("Upload error:", error);
       setMessage(`❌ Upload failed: ${error.message}`);
       
-     
       if (error.message.includes("upload privileges have been disabled")) {
         setUploadDisabled(true);
       }
@@ -345,7 +333,6 @@ function Upload() {
     );
   }
 
- 
   if (!userData) {
     return (
       <div className="upload-container">
@@ -368,7 +355,6 @@ function Upload() {
       <DarkModeToggle />
       <h1>Upload Your Documents</h1>
       
-      {/* Upload disabled warning */}
       {uploadDisabled && (
         <div className="upload-disabled-warning">
           <h2>🚫 Uploads Disabled</h2>
@@ -383,7 +369,6 @@ function Upload() {
         </div>
       )}
       
-      {/* Admin notice */}
       {isAdmin && userData && (
         <div className="admin-upload-notice">
           <p>
@@ -413,7 +398,6 @@ function Upload() {
         </div>
       )}
 
-      {/* Only show upload form if uploads are not disabled */}
       {!uploadDisabled ? (
         <div className="upload-box">
           <form className="upload-form" onSubmit={handleSubmit}>
@@ -527,7 +511,6 @@ function Upload() {
         </div>
       )}
 
-      {/* User info footer */}
       <div className="user-info-footer">
         <p>
           Uploading as: <strong>{userData.FullName}</strong> ({userData.Email})

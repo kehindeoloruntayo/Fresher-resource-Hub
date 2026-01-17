@@ -229,7 +229,7 @@ function AdminPanel() {
             <thead>
               <tr>
                 <th>Title</th>
-                <th>Description</th>
+                <th>Course Code</th>
                 <th>Uploader</th>
                 <th>File</th>
                 <th>Date</th>
@@ -247,7 +247,7 @@ function AdminPanel() {
                     <td>
                       <strong>{upload.title}</strong>
                     </td>
-                    <td>{upload.description}</td>
+                    <td>{upload.course_code}</td>
                     <td>{upload.uploader_name}</td>
                     <td>
                       <a

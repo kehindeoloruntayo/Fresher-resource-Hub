@@ -167,7 +167,7 @@ function Pending() {
                         <div>
                           <div className="document-title">{upload.title}</div>
                           <div className="document-description">
-                            {upload.description}
+                            {upload.course_code}
                           </div>
                         </div>
                       </div>
@@ -226,7 +226,7 @@ function Pending() {
                         <div>
                           <div className="document-title">{upload.title}</div>
                           <div className="document-description">
-                            {upload.description}
+                            {upload.course_code}
                           </div>
                         </div>
                       </div>
@@ -263,7 +263,7 @@ function Pending() {
                       <div>
                         <div className="document-title">{upload.title}</div>
                         <div className="document-description">
-                          {upload.description}
+                          {upload.course_code}
                         </div>
                       </div>
                     </div>

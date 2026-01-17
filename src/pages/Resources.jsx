@@ -1,36 +1,75 @@
+
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import ResourceCard from "../components/ResourceCard";
 import Pagination from "../components/Pagination";
-import "./Resources.css";
 import DarkModeToggle from "../components/DarkModeToggle";
+import "./EnhancedResources.css";
 
-function Resources() {
+function EnhancedResources() {
   const navigate = useNavigate();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState("All");
-  const [fileType, setFileType] = useState("All");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Filter states
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
-  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
+  const [selectedLevel, setSelectedLevel] = useState("All");
+  const [selectedFileType, setSelectedFileType] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const [sortBy, setSortBy] = useState("newest");
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  // Available filter options
+  const departments = [
+    "All",
+    "Accounting",
+    "Biochemistry",
+    "Business Administration",
+    "Computer Science",
+    "Cyber Security",
+    "Economics",
+    "English & Literary Studies",
+    "Law",
+    "Mass Communication",
+    "Medical laboratory Science",
+    "Microbiology",
+    "Nursing Science",
+    "Political Science",
+    "Psychology",
+    "Public Health",
+    "Sociology",
+    "Software Engineering",
+    "Other",
+  ];
+
+  const levels = [
+    "All",
+    "100 Level",
+    "200 Level",
+    "300 Level",
+    "400 Level",
+    "500 Level",
+    "600 Level",
+  ];
+
+  const fileTypes = ["All", "PDF", "PPT", "DOC", "TXT", "ZIP"];
+  const statuses = ["All", "approved", "pending", "rejected"];
+
   useEffect(() => {
-    fetchResources();
+    checkUserAndFetchResources();
   }, []);
 
-  const fetchResources = async () => {
+  const checkUserAndFetchResources = async () => {
     try {
-      let query = supabase
-        .from("uploads")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      const userData = localStorage.getItem("user");
-      let isAdmin = false;
-
+      const userData = sessionStorage.getItem("user");
+      
       if (userData) {
         const user = JSON.parse(userData);
         const { data: userRole } = await supabase
@@ -39,9 +78,24 @@ function Resources() {
           .eq("Email", user.Email)
           .single();
 
-        isAdmin = userRole?.role === "admin";
+        setIsAdmin(userRole?.role === "admin");
       }
 
+      await fetchResources();
+    } catch (error) {
+      console.error("Error in initialization:", error);
+      setLoading(false);
+    }
+  };
+
+  const fetchResources = async () => {
+    try {
+      let query = supabase
+        .from("uploads")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      // Non-admin users only see approved resources
       if (!isAdmin) {
         query = query.eq("status", "approved");
       }
@@ -57,13 +111,9 @@ function Resources() {
     }
   };
 
-  const getFileExtension = (fileName) => {
-    if (!fileName) return "";
-    return fileName.split(".").pop().toLowerCase();
-  };
-
   const getFileTypeDisplay = (fileName) => {
-    const ext = getFileExtension(fileName);
+    if (!fileName) return "";
+    const ext = fileName.split(".").pop().toLowerCase();
     const typeMap = {
       pdf: "PDF",
       ppt: "PPT",
@@ -76,27 +126,46 @@ function Resources() {
     return typeMap[ext] || ext.toUpperCase();
   };
 
+  // Apply all filters and sorting
   const filteredAndSortedResources = useMemo(() => {
     let result = [...resources];
 
-    result = result.filter((resource) => {
-      const categoryMatch =
-        category === "All" || resource.category === category;
-      const typeMatch =
-        fileType === "All" ||
-        getFileTypeDisplay(resource.file_name) === fileType;
-      const searchMatch =
-        !searchTerm ||
-        resource.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resource.uploader_name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        resource.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(
+        (resource) =>
+          resource.title?.toLowerCase().includes(term) ||
+          resource.course_code?.toLowerCase().includes(term) ||
+          resource.uploader_name?.toLowerCase().includes(term) ||
+          resource.department?.toLowerCase().includes(term) ||
+          resource.level?.toLowerCase().includes(term)
+      );
+    }
 
-      return categoryMatch && typeMatch && searchMatch;
-    });
+    // Department filter
+    if (selectedDepartment !== "All") {
+      result = result.filter((r) => r.department === selectedDepartment);
+    }
 
-    // Apply sorting
+    // Level filter
+    if (selectedLevel !== "All") {
+      result = result.filter((r) => r.level === selectedLevel);
+    }
+
+    // File type filter
+    if (selectedFileType !== "All") {
+      result = result.filter(
+        (r) => getFileTypeDisplay(r.file_name) === selectedFileType
+      );
+    }
+
+    // Status filter (admin only)
+    if (isAdmin && selectedStatus !== "All") {
+      result = result.filter((r) => r.status === selectedStatus);
+    }
+
+    // Sorting
     result.sort((a, b) => {
       switch (sortBy) {
         case "newest":
@@ -108,42 +177,50 @@ function Resources() {
         case "name-desc":
           return b.title.localeCompare(a.title);
         case "size-desc":
-          return b.file_size - a.file_size;
+          return (b.file_size || 0) - (a.file_size || 0);
         case "size-asc":
-          return a.file_size - b.file_size;
+          return (a.file_size || 0) - (b.file_size || 0);
         default:
           return 0;
       }
     });
 
     return result;
-  }, [resources, category, fileType, searchTerm, sortBy]);
+  }, [
+    resources,
+    searchTerm,
+    selectedDepartment,
+    selectedLevel,
+    selectedFileType,
+    selectedStatus,
+    sortBy,
+    isAdmin,
+  ]);
 
-  const categories = useMemo(() => {
-    const cats = ["All"];
-    resources.forEach((resource) => {
-      if (resource.category && !cats.includes(resource.category)) {
-        cats.push(resource.category);
-      }
-    });
-    return cats;
-  }, [resources]);
-
-  const fileTypes = useMemo(() => {
-    const types = ["All"];
-    resources.forEach((resource) => {
-      const type = getFileTypeDisplay(resource.file_name);
-      if (type && !types.includes(type)) {
-        types.push(type);
-      }
-    });
-    return types;
-  }, [resources]);
-
-  const displayed = filteredAndSortedResources.slice(
+  // Paginated results
+  const paginatedResources = filteredAndSortedResources.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const totalPages = Math.ceil(filteredAndSortedResources.length / itemsPerPage);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedDepartment("All");
+    setSelectedLevel("All");
+    setSelectedFileType("All");
+    setSelectedStatus("All");
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters =
+    searchTerm ||
+    selectedDepartment !== "All" ||
+    selectedLevel !== "All" ||
+    selectedFileType !== "All" ||
+    (isAdmin && selectedStatus !== "All");
 
   const handleDownload = (resource) => {
     const link = document.createElement("a");
@@ -152,34 +229,24 @@ function Resources() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
 
-  const getFileIcon = (fileName) => {
-    const ext = getFileExtension(fileName);
-    const iconMap = {
-      pdf: "📕",
-      ppt: "📊",
-      pptx: "📊",
-      doc: "📄",
-      docx: "📄",
-      txt: "📝",
-      zip: "📦",
-    };
-    return iconMap[ext] || "📁";
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    // Track download count
+    supabase
+      .from("uploads")
+      .update({
+        download_count: (resource.download_count || 0) + 1,
+      })
+      .eq("id", resource.id)
+      .then(() => {
+        // Refresh resources to show updated count
+        fetchResources();
+      });
   };
 
   if (loading) {
     return (
-      <div className="resources-container">
-        <div className="loading">
+      <div className="resources-page">
+        <div className="loading-container">
           <div className="spinner"></div>
           <p>Loading resources...</p>
         </div>
@@ -188,82 +255,133 @@ function Resources() {
   }
 
   return (
-    <div className="resources-container">
-      <DarkModeToggle /> 
-      {/* --- Header and Filter Section --- */}
-      <div className="filter-section">
-        <h1 className="page-title">📚 Available Resources</h1>
-        <p className="page-subtitle">
-          Browse and download study materials shared by the community
-        </p>
+    <div className="resources-page">
+      <DarkModeToggle />
 
+      {/* Header */}
+      <header className="resources-header">
+        <div className="header-content">
+          <h1 className="page-title">📚 Resource Library</h1>
+          <p className="page-subtitle">
+            Browse and download study materials shared by the community
+          </p>
+        </div>
+        {sessionStorage.getItem("user") && (
+          <button
+            className="upload-cta-btn"
+            onClick={() => navigate("/upload")}
+          >
+            📤 Upload Resource
+          </button>
+        )}
+      </header>
+
+      {/* Filters Section */}
+      <section className="filters-section">
         {/* Search Bar */}
         <div className="search-container">
           <input
             type="text"
-            placeholder="🔍 Search by title, author, or description..."
+            className="search-input"
+            placeholder="🔍 Search by title, course code, or uploader..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              setVisibleCount(8);
+              setCurrentPage(1);
             }}
-            className="search-input"
           />
           {searchTerm && (
             <button
-              className="clear-search"
+              className="clear-search-btn"
               onClick={() => setSearchTerm("")}
-              title="Clear search"
             >
               ✕
             </button>
           )}
         </div>
 
-        {/* Filters */}
+        {/* Filter Controls */}
         <div className="filters-grid">
-          <div className="filter-group">
-            <label>📁 Category</label>
+          <div className="filter-control">
+            <label className="filter-label">🏛️ Department</label>
             <select
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                setVisibleCount(8);
-              }}
               className="filter-select"
+              value={selectedDepartment}
+              onChange={(e) => {
+                setSelectedDepartment(e.target.value);
+                setCurrentPage(1);
+              }}
             >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat === "All" ? "All Categories" : cat}
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="filter-group">
-            <label>📄 File Type</label>
+          <div className="filter-control">
+            <label className="filter-label">🎓 Level</label>
             <select
-              value={fileType}
-              onChange={(e) => {
-                setFileType(e.target.value);
-                setVisibleCount(8);
-              }}
               className="filter-select"
+              value={selectedLevel}
+              onChange={(e) => {
+                setSelectedLevel(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              {levels.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-control">
+            <label className="filter-label">📄 File Type</label>
+            <select
+              className="filter-select"
+              value={selectedFileType}
+              onChange={(e) => {
+                setSelectedFileType(e.target.value);
+                setCurrentPage(1);
+              }}
             >
               {fileTypes.map((type) => (
                 <option key={type} value={type}>
-                  {type === "All" ? "All File Types" : type}
+                  {type}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="filter-group">
-            <label>Sort By</label>
+          {isAdmin && (
+            <div className="filter-control">
+              <label className="filter-label">🔍 Status</label>
+              <select
+                className="filter-select"
+                value={selectedStatus}
+                onChange={(e) => {
+                  setSelectedStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                {statuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status === "All" ? "All Statuses" : status.charAt(0).toUpperCase() + status.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="filter-control">
+            <label className="filter-label">⚡ Sort By</label>
             <select
+              className="filter-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="filter-select"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -275,190 +393,102 @@ function Resources() {
           </div>
         </div>
 
-        {/* Active Filters Badges */}
-        {(category !== "All" || fileType !== "All" || searchTerm) && (
+        {/* Active Filters */}
+        {hasActiveFilters && (
           <div className="active-filters">
             <span className="active-filters-label">Active Filters:</span>
-            {category !== "All" && (
-              <span className="filter-badge">
-                Category: {category}
-                <button onClick={() => setCategory("All")}>×</button>
-              </span>
-            )}
-            {fileType !== "All" && (
-              <span className="filter-badge">
-                Type: {fileType}
-                <button onClick={() => setFileType("All")}>×</button>
-              </span>
-            )}
-            {searchTerm && (
-              <span className="filter-badge">
-                Search: "{searchTerm}"
-                <button onClick={() => setSearchTerm("")}>×</button>
-              </span>
-            )}
-            <button
-              className="clear-all-filters"
-              onClick={() => {
-                setCategory("All");
-                setFileType("All");
-                setSearchTerm("");
-              }}
-            >
-              Clear All
+            <div className="filter-badges">
+              {searchTerm && (
+                <span className="filter-badge">
+                  Search: "{searchTerm}"
+                  <button onClick={() => setSearchTerm("")}>×</button>
+                </span>
+              )}
+              {selectedDepartment !== "All" && (
+                <span className="filter-badge">
+                  Dept: {selectedDepartment}
+                  <button onClick={() => setSelectedDepartment("All")}>×</button>
+                </span>
+              )}
+              {selectedLevel !== "All" && (
+                <span className="filter-badge">
+                  Level: {selectedLevel}
+                  <button onClick={() => setSelectedLevel("All")}>×</button>
+                </span>
+              )}
+              {selectedFileType !== "All" && (
+                <span className="filter-badge">
+                  Type: {selectedFileType}
+                  <button onClick={() => setSelectedFileType("All")}>×</button>
+                </span>
+              )}
+              {isAdmin && selectedStatus !== "All" && (
+                <span className="filter-badge">
+                  Status: {selectedStatus}
+                  <button onClick={() => setSelectedStatus("All")}>×</button>
+                </span>
+              )}
+            </div>
+            <button className="clear-all-btn" onClick={clearFilters}>
+              Clear All Filters
             </button>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* --- Results Summary --- */}
+      {/* Results Summary */}
       <div className="results-summary">
-        <div className="results-count">
-          Showing <strong>{displayed.length}</strong> of{" "}
+        <p className="results-text">
+          Showing <strong>{paginatedResources.length}</strong> of{" "}
           <strong>{filteredAndSortedResources.length}</strong> resources
-          {searchTerm && ` for "${searchTerm}"`}
-          {category !== "All" && ` in ${category}`}
-          {fileType !== "All" && ` (${fileType} files)`}
-          {sortBy !== "newest" && (
-            <span className="sort-indicator">
-              {" "}
-              • Sorted by {sortBy === "oldest" && "Oldest"}
-              {sortBy === "name-asc" && "Name (A→Z)"}
-              {sortBy === "name-desc" && "Name (Z→A)"}
-              {sortBy === "size-desc" && "Largest"}
-              {sortBy === "size-asc" && "Smallest"}
-            </span>
+          {filteredAndSortedResources.length !== resources.length && (
+            <span className="filtered-text"> (filtered from {resources.length} total)</span>
           )}
-        </div>
-        <div className="upload-cta">
-          {localStorage.getItem("user") && (
-            <button
-              onClick={() => navigate("/upload")}
-              className="upload-cta-btn"
-            >
-              📤 Upload New Resource
-            </button>
-          )}
-        </div>
+        </p>
       </div>
 
-      {/* --- Resource Cards Grid --- */}
+      {/* Resources Grid */}
       {filteredAndSortedResources.length > 0 ? (
         <>
           <div className="resources-grid">
-            {displayed.map((resource) => (
-              <div
+            {paginatedResources.map((resource) => (
+              <ResourceCard
                 key={resource.id}
-                className="resource-card"
-                onClick={() => setSelectedDoc(resource)}
-              >
-                <div className="card-header">
-                  <span className="file-icon">
-                    {getFileIcon(resource.file_name)}
-                  </span>
-                  <h3 className="card-title">{resource.title}</h3>
-                </div>
-
-                <div className="card-content">
-                  {resource.description && (
-                    <p className="card-description">{resource.description}</p>
-                  )}
-
-                  <div className="card-meta">
-                    <div className="meta-item">
-                      <span className="meta-label">📁 Category:</span>
-                      <span className="meta-value">
-                        {resource.category || "Uncategorized"}
-                      </span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">📄 Type:</span>
-                      <span className="meta-value">
-                        {getFileTypeDisplay(resource.file_name)}
-                      </span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">👤 By:</span>
-                      <span className="meta-value">
-                        {resource.uploader_name}
-                      </span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">📅 Uploaded:</span>
-                      <span className="meta-value">
-                        {new Date(resource.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">💾 Size:</span>
-                      <span className="meta-value">
-                        {formatFileSize(resource.file_size)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Status badge for admin users */}
-                  {localStorage.getItem("admin") === "true" && (
-                    <div className="card-status">
-                      <span
-                        className={`status-badge status-${resource.status}`}
-                      >
-                        {resource.status.toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="card-actions">
-                  <button
-                    className="download-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownload(resource);
-                    }}
-                    title="Download"
-                  >
-                    ⬇️ Download
-                  </button>
-                </div>
-              </div>
+                resource={resource}
+                onDownload={handleDownload}
+              />
             ))}
           </div>
 
-          {/* ← ADD THIS PAGINATION COMPONENT HERE */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={Math.ceil(filteredAndSortedResources.length / itemsPerPage)}
-            onPageChange={setCurrentPage}
-          />
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </>
       ) : (
-        /* --- No Results --- */
+        /* No Results */
         <div className="no-results">
           <div className="no-results-icon">🔍</div>
-          <h3>No resources found</h3>
-          <p>
-            {searchTerm || category !== "All" || fileType !== "All"
+          <h3 className="no-results-title">No resources found</h3>
+          <p className="no-results-text">
+            {hasActiveFilters
               ? "No resources match your current filters. Try adjusting your search criteria."
               : "No resources available yet. Be the first to upload!"}
           </p>
           <div className="no-results-actions">
-            {(searchTerm || category !== "All" || fileType !== "All") && (
-              <button
-                className="clear-filters-btn"
-                onClick={() => {
-                  setCategory("All");
-                  setFileType("All");
-                  setSearchTerm("");
-                }}
-              >
+            {hasActiveFilters && (
+              <button className="clear-filters-btn" onClick={clearFilters}>
                 Clear All Filters
               </button>
             )}
-            {localStorage.getItem("user") && (
+            {sessionStorage.getItem("user") && (
               <button
+                className="upload-btn"
                 onClick={() => navigate("/upload")}
-                className="upload-cta-btn"
               >
                 Upload First Resource
               </button>
@@ -466,106 +496,8 @@ function Resources() {
           </div>
         </div>
       )}
-
-      {/* --- Modal Preview --- */}
-      {selectedDoc && (
-        <div className="modal-overlay" onClick={() => setSelectedDoc(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{selectedDoc.title}</h2>
-              <button
-                className="modal-close"
-                onClick={() => setSelectedDoc(null)}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="modal-icon">
-                {getFileIcon(selectedDoc.file_name)}
-              </div>
-
-              <div className="modal-details">
-                {selectedDoc.description && (
-                  <div className="modal-section">
-                    <h4>Description</h4>
-                    <p>{selectedDoc.description}</p>
-                  </div>
-                )}
-
-                <div className="modal-grid">
-                  <div className="detail-item">
-                    <span className="detail-label">📁 Category:</span>
-                    <span className="detail-value">
-                      {selectedDoc.category || "Uncategorized"}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">📄 File Type:</span>
-                    <span className="detail-value">
-                      {getFileTypeDisplay(selectedDoc.file_name)}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">👤 Uploaded by:</span>
-                    <span className="detail-value">
-                      {selectedDoc.uploader_name}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">📅 Date:</span>
-                    <span className="detail-value">
-                      {new Date(selectedDoc.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">💾 File Size:</span>
-                    <span className="detail-value">
-                      {formatFileSize(selectedDoc.file_size)}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">📤 File Name:</span>
-                    <span className="detail-value">
-                      {selectedDoc.file_name}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Status for admin users */}
-                {localStorage.getItem("admin") === "true" && (
-                  <div className="modal-section">
-                    <h4>Status</h4>
-                    <span
-                      className={`status-badge status-${selectedDoc.status}`}
-                    >
-                      {selectedDoc.status.toUpperCase()}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button
-                className="modal-download-btn"
-                onClick={() => handleDownload(selectedDoc)}
-              >
-                ⬇️ Download File
-              </button>
-              <button
-                className="modal-close-btn"
-                onClick={() => setSelectedDoc(null)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-export default Resources;
+export default EnhancedResources;

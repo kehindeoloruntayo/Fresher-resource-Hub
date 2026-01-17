@@ -572,7 +572,7 @@ export default function AdminAccess() {
                       </tr>
                     ))
                   )}
-                </tbody>
+                </tbody> 
               </table>
 
               <Pagination
