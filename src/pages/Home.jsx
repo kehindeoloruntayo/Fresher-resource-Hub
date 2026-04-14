@@ -6,7 +6,7 @@ function Home() {
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-text">
-          <h1>Welcome to Fresher Resource Hub</h1>
+          <h1>Welcome to Resource Hub</h1>
           <p>
             Browse, download, and share slides and past question papers. Learn smarter with resources from seniors and contributors.
           </p>
@@ -16,7 +16,7 @@ function Home() {
 
       {/* Features Section */}
       <section className="features">
-        <h2>Why Use Fresher Hub?</h2>
+        <h2>Why Use Resource Hub?</h2>
         <div className="feature-cards">
           <div className="feature-card">
             <h3>Easy Browsing</h3>

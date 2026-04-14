@@ -61,7 +61,7 @@
 * Hidden service keys
 
 ## Contributors
-- [@kehindeoloruntayo](https://github.com/kehindeoloruntayo) – Frontend
+- [@kehindeoloruntayo](https://github.com/kehindeoloruntayo) – Frontend + Backend
 - [@kingz1127](https://github.com/kingz1127) – Backend
 - [@emma-nuel1708](https://github.com/emma-nuel1708) – UI polish & responsive fixes
 

@@ -137,7 +137,7 @@ const fetchUserData = async () => {
       <div className="card-grid">
         <div className="dashboard-card" onClick={() => navigate("/upload")}>
           <h3>📤 Upload New File</h3>
-          <p>Share new notes or slides with freshers</p>
+          <p>Share new notes or slides</p>
         </div>
 
         <div className="dashboard-card" onClick={() => navigate("/resources")}>

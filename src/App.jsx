@@ -1,12 +1,10 @@
-
-
-
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import NavbarUser from "./components/NavbarUser";
 import NavbarAdmin from "./components/NavbarAdmin";
 import Footer from "./components/Footer";
+import ChatbotWidget from "./components/ChatbotWidget";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -268,6 +266,7 @@ function AppContent() {
         </main>
         <Footer />
       </div>
+      <ChatbotWidget />
     </>
   );
 }

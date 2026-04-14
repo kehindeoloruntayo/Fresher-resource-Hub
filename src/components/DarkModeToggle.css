@@ -1,7 +1,7 @@
 .dark-mode-toggle-wrapper {
   position: fixed;
   bottom: 30px;
-  right: 30px;
+  left: 30px;
   z-index: 9999;
 }
 
@@ -85,4 +85,11 @@
 
 [data-theme="dark"] .dark-mode-toggle-slider {
   background: #f1f5f9;
+}
+
+@media (max-width: 640px) {
+  .dark-mode-toggle-wrapper {
+    left: 16px;
+    bottom: 16px;
+  }
 }
