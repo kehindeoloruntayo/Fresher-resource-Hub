@@ -33,7 +33,7 @@ function OTPVerification() {
     const result = await res.json();
     
     if (!res.ok || !result.success) {
-      throw new Error(result.error || "Invalid OTP");
+      throw new Error(result.error || "Invalid Code");
     }
 
     
@@ -68,18 +68,18 @@ const handleResendOTP = async () => {
     const result = await res.json();
     
     if (!res.ok || !result.success) {
-      throw new Error(result.error || "Failed to resend OTP");
+      throw new Error(result.error || "Failed to resend code");
     }
 
     if (result.otp) {
       alert(`New OTP: ${result.otp}`); 
     } else {
-      alert("New OTP sent to your email!");
+      alert("New code sent to your email!");
     }
     
   } catch (err) {
-    console.error("Failed to resend OTP:", err);
-    setError("Failed to resend OTP. Please try again.");
+    console.error("Failed to resend code:", err);
+    setError("Failed to resend Code. Please try again.");
   }
 
   };
@@ -87,7 +87,7 @@ const handleResendOTP = async () => {
   return (
     <div className="forgot-container">
       <form className="forgot-box" onSubmit={verifyOTP}>
-        <h1>Verify OTP</h1>
+        <h1>Verify Code</h1>
         <p className="auth-subtext">Enter the 6-digit code sent to your email</p>
         
         {error && <p className="error-message">{error}</p>}
@@ -95,7 +95,7 @@ const handleResendOTP = async () => {
         <input
           type="text"
           maxLength={6}
-          placeholder="Enter 6-digit OTP"
+          placeholder="Enter 6-digit code"
           value={otp}
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
           className="forgot-input"
@@ -112,7 +112,7 @@ const handleResendOTP = async () => {
             className="resend-link"
             disabled={loading}
           >
-            Resend OTP
+            Resend code
           </button>
         </div>
 

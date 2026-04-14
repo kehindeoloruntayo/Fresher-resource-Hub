@@ -20,7 +20,6 @@ function ResetPassword() {
       });
     } catch (err) {
       console.error("Failed to send confirmation email:", err);
-      // Don't show error to user - this is just a notification
     }
   };
 
@@ -83,7 +82,7 @@ function ResetPassword() {
           <h2>Password Reset Successful ✅</h2>
           <p>You can now log in with your new password.</p>
           <p>A confirmation email has been sent to your inbox.</p>
-          <a href="/login" className="forgot-btn">Go to Login</a>
+          <a href="/login" className="forgot-btn">Back to Login</a>
         </div>
       </div>
     );

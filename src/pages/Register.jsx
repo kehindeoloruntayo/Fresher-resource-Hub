@@ -1,4 +1,3 @@
-
 import "./Register.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -86,7 +85,7 @@ const response = await fetch(`${API_BASE_URL}/api/register`, {
     <div className="auth-container">
       <div className="auth-box">
         <h2>Create an Account 📝</h2>
-        <p className="auth-subtext">Join the Fresher Hub community</p>
+        <p className="auth-subtext">Join the Resource Hub community</p>
 
         {error && <div className="error-message">{error}</div>}
 
@@ -111,7 +110,7 @@ const response = await fetch(`${API_BASE_URL}/api/register`, {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email" 
+              placeholder="Enter your email address" 
               required 
               disabled={loading}
             />

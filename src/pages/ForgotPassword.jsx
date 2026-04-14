@@ -24,8 +24,9 @@ function ForgotPassword() {
         .single();
 
       if (userError || !user) {
-        setError("No account found with this email");
-        toast.error("No account found with this email");
+        const message = "We could not find an account with that email address.";
+        setError(message);
+        toast.error(message);
         setLoading(false);
         return;
       }
@@ -44,8 +45,8 @@ function ForgotPassword() {
       
       if (!res.ok || !result.success) {
         console.error("Email service failed:", result);
-        setError(result.error || "Failed to send OTP");
-        toast.error("Failed to send OTP. Please try again.");
+        setError(result.error || "We could not send your code right now");
+        toast.error("We could not send your code right now. Please try again.");
         setLoading(false);
         return;
       }
@@ -67,7 +68,7 @@ function ForgotPassword() {
         //   icon: "🔐"
         // });
       } else {
-        toast.success("OTP sent to your email!");
+        toast.success("Your verification code has been sent to your email!");
       }
 
       sessionStorage.setItem("resetEmail", email);
@@ -100,7 +101,7 @@ function ForgotPassword() {
 
       
       if (!res.ok || !result.success) {
-        toast.error(result.error || "Failed to resend OTP");
+        toast.error(result.error || "We could not resend your code right now.");
         setLoading(false);
         return;
       }
@@ -120,13 +121,13 @@ function ForgotPassword() {
         //   icon: "🔐"
         // });
       } else {
-        toast.success("A new OTP has been sent to your email!");
+        toast.success("A new verification code has been sent to your email!");
       }
 
       setLoading(false);
     } catch (err) {
       console.error("Resend error:", err);
-      const errorMsg = err.message || "Failed to resend OTP";
+      const errorMsg = err.message || "We could not resend your code right now.";
       setError(errorMsg);
       toast.error(errorMsg);
       setLoading(false);
@@ -137,20 +138,20 @@ function ForgotPassword() {
     <div className="forgot-container">
       {sent ? (
         <div className="success-box">
-          <h2>✓ OTP Generated!</h2>
-          <p>A 6-digit OTP has been generated for:</p>
+          <h2>Check your email</h2>
+          <p>We sent a 6-digit verification code to:</p>
           <p className="user-email">{email}</p>
-          <p>Check your email or Spam notification for the OTP code.</p>
+          <p>Check your email or Spam notification for the code.</p>
           <div className="button-group">
             <Link to="/verify-otp" className="forgot-btn">
-              Continue to Verify OTP
+              Continue to verification
             </Link>
             <button 
               onClick={handleResendOTP} 
               className="forgot-btn secondary"
               disabled={loading}
             >
-              {loading ? "Resending..." : "Resend OTP"}
+              {loading ? "Resending..." : "Resend Code"}
             </button>
           </div>
           <p className="back-link">
@@ -161,7 +162,7 @@ function ForgotPassword() {
         <form className="forgot-box" onSubmit={handleSubmit}>
           <h1>Forgot Password</h1>
           <p className="auth-subtext">
-            Enter your email to receive a password reset OTP
+            Enter your email to receive code
           </p>
 
           {error && <div className="error-message">{error}</div>}
@@ -191,7 +192,7 @@ function ForgotPassword() {
                 Sending OTP...
               </>
             ) : (
-              "Send OTP"
+              "Send code"
             )}
           </button>
 

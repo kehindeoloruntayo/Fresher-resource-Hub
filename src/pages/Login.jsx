@@ -44,17 +44,17 @@ function Login({ setUser, setUserRole }) {
       if (!contentType || !contentType.includes("application/json")) {
         const text = await response.text();
         console.error("Non-JSON response:", text);
-        throw new Error("Server returned non-JSON response");
+        throw new Error("We could not sign you in right now. Please try again.");
       }
 
       const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 401) {
-          toast.error("Invalid email or password. Please try again.");
-          setError("Invalid email or password");
+          toast.error("Incorrect email or password. Please try again.");
+          setError("Incorrect email or password");
         } else if (response.status === 404) {
-          toast.error("Service unavailable. Please try again later.");
+          toast.error("The service is unavailable right now. Please try again later.");
           setError("Service unavailable");
         } else {
           toast.error(data.error || "Login failed");
@@ -105,7 +105,7 @@ function Login({ setUser, setUserRole }) {
         error.message.includes("Failed to fetch")
       ) {
         toast.error(
-          "Cannot connect to server. Please check your internet connection or try again later."
+          "We could not connect to the server. Check your internet connection and try again."
         );
         setError("Connection failed. Server might be down.");
       } else {
