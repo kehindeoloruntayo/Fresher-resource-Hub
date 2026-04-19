@@ -25,6 +25,14 @@ const OTP_EXPIRY_MINUTES = 10;
 const SALT_ROUNDS = 12;
 const SESSION_EXPIRY_HOURS = 24;
 const CHATBOT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  process.env.FRONTEND_URL,
+  process.env.BACKEND_PUBLIC_URL,
+  'https://resource-hub.onrender.com',
+  'https://resource-hub-backend.onrender.com'
+].filter(Boolean);
 const chatbotClient = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY })
   : null;
@@ -89,12 +97,7 @@ const getChatbotErrorResponse = (error) => {
 
 // ✅ FIXED: UPDATED CORS FOR BOTH FRONTEND AND BACKEND DOMAINS
 app.use(cors({
-  origin: [
-    'http://localhost:5173', 
-    'http://localhost:5174',
-    'https://fresher-resource-hub.onrender.com',      // Your frontend
-    'https://fresher-resource-hub-backend.onrender.com' // Your backend (self-reference)
-  ], 
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
@@ -231,9 +234,9 @@ const generateSessionId = () => {
 app.get('/api/health', (req, res) => {
   const healthData = {
     status: 'OK',
-    service: 'Fresher Hub Backend',
+    service: 'Resource Hub Backend',
     timestamp: new Date().toISOString(),
-    server: 'fresher-resource-hub-backend.onrender.com',
+    server: process.env.BACKEND_PUBLIC_URL || 'https://resource-hub-backend.onrender.com',
     email: {
       available: emailService.isAvailable,
       service: emailService.name,
@@ -242,12 +245,7 @@ app.get('/api/health', (req, res) => {
       fromAddress: process.env.EMAIL_FROM || 'Not configured'
     },
     cors: {
-      allowedOrigins: [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'https://fresher-resource-hub.onrender.com',
-        'https://fresher-resource-hub-backend.onrender.com'
-      ]
+      allowedOrigins
     },
     endpoints: {
       sendOtp: '/api/send-otp (POST)',
