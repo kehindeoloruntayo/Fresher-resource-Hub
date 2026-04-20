@@ -30,8 +30,8 @@ const allowedOrigins = [
   'http://localhost:5174',
   process.env.FRONTEND_URL,
   process.env.BACKEND_PUBLIC_URL,
-  'https://resource-hub-frontend-azxy.onrender.com',
-  'https://resource-hub-backend-ytdu.onrender.com'
+  'https://resource-hub-as2o.onrender.com',
+  'https://resource-hub-backend-hpq8.onrender.com'
 ].filter(Boolean);
 const chatbotClient = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY })
