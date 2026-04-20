@@ -236,7 +236,7 @@ app.get('/api/health', (req, res) => {
     status: 'OK',
     service: 'Resource Hub Backend',
     timestamp: new Date().toISOString(),
-    server: process.env.BACKEND_PUBLIC_URL || 'https://resource-hub-backend.onrender.com',
+    server: process.env.BACKEND_PUBLIC_URL || 'https://resource-hub-backend-hpq8.onrender.com',
     email: {
       available: emailService.isAvailable,
       service: emailService.name,
@@ -1053,7 +1053,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 ========== FRESHER HUB BACKEND STARTED ==========`);
-  console.log(`🌐 Server URL: https://fresher-resource-hub-backend.onrender.com`);
+  console.log(`🌐 Server URL: https://resource-hub-backend-hpq8.onrender.com`);
   console.log(`🔗 Local: http://localhost:${PORT}`);
   console.log(`\n📊 ========== API ENDPOINTS ==========`);
   console.log(`🏥 Health: /api/health`);
@@ -1063,8 +1063,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔐 Register: POST /api/register`);
   console.log(`🔑 Login: POST /api/login`);
   console.log(`\n🌍 ========== CORS ALLOWED ORIGINS ==========`);
-  console.log(`✅ https://fresher-resource-hub.onrender.com (Frontend)`);
-  console.log(`✅ https://fresher-resource-hub-backend.onrender.com (Backend)`);
+  console.log(`✅ https://resource-hub-as2o.onrender.com (Frontend)`);
+  console.log(`✅ https://resource-hub-backend-hpq8.onrender.com (Backend)`);
   console.log(`✅ http://localhost:5173`);
   console.log(`✅ http://localhost:5174`);
   console.log(`\n📧 ========== EMAIL STATUS ==========`);
