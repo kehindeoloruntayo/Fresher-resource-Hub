@@ -9,6 +9,7 @@ import { dirname, join } from 'path';
 import { readFileSync, existsSync } from 'fs';
 import sgMail from '@sendgrid/mail';
 import { PROJECT_KNOWLEDGE } from './projectKnowledge.js';
+import nodemailer from 'nodemailer';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -113,115 +114,52 @@ if (distExists) {
 }
 
 // ==================== ENHANCED EMAIL CONFIGURATION ====================
+
 console.log('\n🔧 ========== EMAIL CONFIGURATION CHECK ==========');
-console.log('📋 Checking environment variables:');
-console.log('- SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY ? `✅ Set (${process.env.SENDGRID_API_KEY.substring(0, 10)}...)` : '❌ NOT SET');
-console.log('- EMAIL_FROM:', process.env.EMAIL_FROM || '❌ NOT SET (Required for SendGrid)');
-console.log('- EMAIL_USER:', process.env.EMAIL_USER || 'Not set (optional)');
-console.log('- SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ Set' : '❌ NOT SET');
-console.log('===================================================\n');
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 let emailService = {
-  name: 'none',
-  isAvailable: false,
-  sendEmail: null,
-  error: null
+  name: 'Gmail',
+  isAvailable: !!(process.env.EMAIL_USER && process.env.EMAIL_PASS),
+  sendEmail: async (toEmail, subject, htmlContent, textContent) => {
+    console.log(`\n📧 === GMAIL SENDING PROCESS STARTED ===`);
+    console.log(`📧 To: ${toEmail}`);
+    
+    const mailOptions = {
+      from: `"Fresher Hub" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject: subject,
+      text: textContent,
+      html: htmlContent,
+    };
+
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ EMAIL SENT SUCCESSFULLY!`);
+      console.log(`📬 Message ID: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
+    } catch (error) {
+      console.error('❌ GMAIL SENDING ERROR:', error.message);
+      throw error;
+    }
+  }
 };
 
-// Initialize SendGrid if API key exists
-if (process.env.SENDGRID_API_KEY) {
-  try {
-    // Test if API key is valid format
-    if (!process.env.SENDGRID_API_KEY.startsWith('SG.')) {
-      console.log('❌ SendGrid API key format invalid - should start with "SG."');
-      emailService.error = 'API key format invalid. Should start with "SG."';
-    } else {
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-      console.log('✅ SendGrid API key configured');
-      
-      emailService = {
-        name: 'SendGrid',
-        isAvailable: true,
-        error: null,
-        sendEmail: async (toEmail, subject, htmlContent, textContent) => {
-          console.log(`\n📧 === EMAIL SENDING PROCESS STARTED ===`);
-          console.log(`📧 To: ${toEmail}`);
-          console.log(`📝 Subject: ${subject}`);
-          
-          const msg = {
-            to: toEmail,
-            from: process.env.EMAIL_FROM || 'Fresher Hub <osunyingboadedeji1@gmail.com>',
-            subject: subject,
-            html: htmlContent,
-            text: textContent,
-            trackingSettings: {
-              clickTracking: { enable: false },
-              openTracking: { enable: false }
-            }
-          };
-          
-          console.log(`📤 Attempting to send via SendGrid...`);
-          console.log(`📨 From address: ${msg.from}`);
-          
-          try {
-            const response = await sgMail.send(msg);
-            console.log(`✅ EMAIL SENT SUCCESSFULLY!`);
-            console.log(`📬 Status Code: ${response[0]?.statusCode}`);
-            
-            if (response[0]?.headers?.['x-message-id']) {
-              console.log(`📧 Message ID: ${response[0].headers['x-message-id']}`);
-            }
-            
-            console.log(`====================================\n`);
-            
-            return { 
-              success: true, 
-              messageId: response[0]?.headers?.['x-message-id'],
-              statusCode: response[0]?.statusCode
-            };
-          } catch (error) {
-            console.error('❌ SENDGRID API ERROR DETAILS:');
-            console.error('- Error Message:', error.message);
-            console.error('- Error Code:', error.code);
-            
-            if (error.response) {
-              console.error('- HTTP Status Code:', error.response.statusCode);
-              console.error('- Response Body:', JSON.stringify(error.response.body, null, 2));
-              
-              if (error.response.body?.errors) {
-                error.response.body.errors.forEach((err, i) => {
-                  console.error(`  Error ${i + 1}: ${err.message}`);
-                  if (err.field) console.error(`  Field: ${err.field}`);
-                  if (err.help) console.error(`  Help: ${err.help}`);
-                });
-              }
-            }
-            
-            console.error(`====================================\n`);
-            
-            emailService.error = error.message;
-            throw error;
-          }
-        }
-      };
-      console.log('✅ SendGrid email service initialized successfully');
-    }
-  } catch (error) {
-    console.error('❌ Failed to initialize SendGrid:', error.message);
-    emailService.isAvailable = false;
-    emailService.error = error.message;
-  }
-} else {
-  console.log('⚠️ SENDGRID_API_KEY not found in environment variables');
-  console.log('💡 REQUIRED: Add to Render.com → Environment → SENDGRID_API_KEY=sg.your_api_key_here');
-  emailService.error = 'SENDGRID_API_KEY environment variable not set';
+// Verify connection on startup
+if (emailService.isAvailable) {
+  transporter.verify((error) => {
+    if (error) console.log('❌ Gmail Transporter Error:', error);
+    else console.log('✅ Gmail is ready to send messages');
+  });
 }
 
-console.log('📧 Email service status:', {
-  name: emailService.name,
-  available: emailService.isAvailable ? '✅ Yes' : '❌ No',
-  error: emailService.error || 'None'
-});
+
 
 console.log('✅ Supabase connected as database');
 
